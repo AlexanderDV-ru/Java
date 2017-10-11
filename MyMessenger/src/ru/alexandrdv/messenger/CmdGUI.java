@@ -21,7 +21,7 @@ public abstract class CmdGUI
 		f.setDefaultCloseOperation(3);
 		f.setAlwaysOnTop(true);
 		f.setTitle(" - Console");
-		f.setSize(774, 507);
+		f.setSize(758, 507);
 		f.setResizable(false);
 		f.setLocationRelativeTo(null);
 		f.setLayout(null);
