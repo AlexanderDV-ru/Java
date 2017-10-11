@@ -2,7 +2,9 @@ package ru.alexandrdv.messenger.client;
 
 import javax.swing.JFrame;
 
-public class Client extends JFrame
+import ru.alexandrdv.messenger.CmdGUI;
+
+public class Client extends CmdGUI
 {
 
 	public Client()
@@ -15,6 +17,13 @@ public class Client extends JFrame
 	{
 		new Client();
 
+	}
+
+	@Override
+	public void Command(String[] args)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }
