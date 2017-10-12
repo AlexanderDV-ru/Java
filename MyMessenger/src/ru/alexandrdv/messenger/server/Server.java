@@ -14,7 +14,9 @@ import java.util.HashMap;
 import ru.alexandrdv.messenger.CmdGUI;
 import ru.alexandrdv.messenger.Encryptor;
 import ru.alexandrdv.messenger.Encryptor.EncryptionType;
+import ru.alexandrdv.messenger.Packet.MessagePacket;
 import ru.alexandrdv.messenger.Packet;
+import ru.alexandrdv.messenger.Packet.QueryPacket;
 
 public class Server extends CmdGUI
 {
@@ -43,7 +45,7 @@ public class Server extends CmdGUI
 	{
 		try
 		{
-			os.writeObject(new Packet(reciever, msg, crypt));
+			os.writeObject(new MessagePacket(reciever, msg, crypt));
 			return true;
 		}
 		catch (Exception e)
@@ -52,7 +54,19 @@ public class Server extends CmdGUI
 			return false;
 		}
 	}
-	HashMap<String, ObjectOutputStream> cl=new HashMap<String, ObjectOutputStream>();
+	private boolean sendQuery(ObjectOutputStream os,String query, EncryptionType crypt)
+	{
+		try
+		{
+			os.writeObject(new QueryPacket(query, crypt));
+			return true;
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return false;
+		}
+	}
 	private void createChat(Socket socket)
 	{
 		new Thread(new Runnable()
@@ -62,34 +76,34 @@ public class Server extends CmdGUI
 				try
 				{
 					ObjectOutputStream writer = new ObjectOutputStream(socket.getOutputStream());
-					cl.put(socket.getInetAddress().getHostAddress()+":"+socket.getPort(), writer);
 					ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
+					add(new ClientData("Client"+clientByIpAndPort.size(), socket.getInetAddress().getHostAddress(), socket.getPort(), socket, writer, reader));
 					Packet p;
 					for (;socket != null;)
 					{
 						if ((p=(Packet)reader.readObject()) != null)
 						{
-							if (p.msg.startsWith("exit"))
+							if(!p.isQuery)
 							{
-								break ;
+
+								MessagePacket msgPacket=(MessagePacket)p;
+								println(msgPacket.msg);
+								if(msgPacket.type==EncryptionType.Client)
+									sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double);
+								if(msgPacket.type==EncryptionType.Double)
+									sendTo(writer,msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client);
+								if(msgPacket.type==EncryptionType.Server)
+								{
+									println(Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Server, EncryptionType.None));
+									if(clientByIpAndPort.containsKey(msgPacket.reciever))
+										sendTo(clientByIpAndPort.get(msgPacket.reciever).os, msgPacket.reciever, msgPacket.msg, EncryptionType.Server);
+										
+								}
 							}
 							else
 							{
-								println(p.msg);
-								if(p.type==EncryptionType.Client)
-									sendTo(writer, p.reciever, Encryptor.encrypt(p.msg, 12, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double);
-								if(p.type==EncryptionType.Double)
-									sendTo(writer, p.reciever, Encryptor.encrypt(p.msg, 12, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client);
-								if(p.type==EncryptionType.Server)
-								{
-									println(Encryptor.encrypt(p.msg, 12, EncryptionType.Server, EncryptionType.None));
-									if(cl.containsKey(p.reciever))
-										sendTo(cl.get(p.reciever), p.reciever, p.msg, EncryptionType.Server);
-									else for(String k:cl.keySet())
-										System.out.println(k);
-									System.out.println(p.reciever);
-										
-								}
+								QueryPacket q=(QueryPacket)p;
+								sendQuery(writer,clientByIpAndPort.containsKey(q.query)+"", EncryptionType.None);
 							}
 						}
 					}
@@ -102,6 +116,19 @@ public class Server extends CmdGUI
 			}
 		}).start();
 		
+	}
+	HashMap<String, ClientData> clientByIpAndPort=new HashMap<String, ClientData>();
+	HashMap<String, ClientData> clientByName=new HashMap<String, ClientData>();
+	
+	public void add(ClientData data)
+	{
+		clientByIpAndPort.put(data.ip+":"+data.port, data);
+		clientByName.put(data.name, data);
+	}
+	public void remove(ClientData data)
+	{
+		clientByIpAndPort.remove(data.ip+":"+data.port, data);
+		clientByName.remove(data.name, data);
 	}
 
 	public static void main(String[] args)
@@ -116,5 +143,23 @@ public class Server extends CmdGUI
 
 		
 	}
-
+class ClientData
+{
+	public String name;
+	public String ip;
+	public int port;
+	public Socket socket;
+	public ObjectOutputStream os;
+	public ObjectInputStream is;
+	public ClientData(String name, String ip, int port, Socket socket, ObjectOutputStream os, ObjectInputStream is)
+	{
+		super();
+		this.name = name;
+		this.ip = ip;
+		this.port = port;
+		this.socket = socket;
+		this.os = os;
+		this.is = is;
+	}
+}
 }
