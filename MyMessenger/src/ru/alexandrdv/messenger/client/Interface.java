@@ -2,9 +2,11 @@ package ru.alexandrdv.messenger.client;
 
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
@@ -12,6 +14,8 @@ import java.awt.event.AdjustmentListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -24,14 +28,27 @@ import java.util.Calendar;
 import java.util.HashMap;
 
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+
+import ru.alexandrdv.messenger.Encryptor;
+import ru.alexandrdv.messenger.Encryptor.EncryptionType;
+import ru.alexandrdv.messenger.Packet.SignPacket;
 
 public class Interface extends JFrame
 {
@@ -50,22 +67,25 @@ public class Interface extends JFrame
 		return Integer.parseInt(i);
 	}
 
+	Interface i;
 	JPanel contacts;
 	Client client;
 	JScrollBar scrollBar = new JScrollBar();
 	JTabbedPane chats;
+
 	public Interface(Client client)
 	{
+		i = this;
 		this.client = client;
 		getContentPane().setLayout(null);
 		loadColors();
 
 		chats = new JTabbedPane(JTabbedPane.TOP);
-		chats.setBounds(159, 0, 517, 515);
+		chats.setBounds(159, 20, 517, 515);
 		getContentPane().add(chats);
 		setDefaultCloseOperation(3);
 
-		setSize(692, 552);
+		setSize(692, 629);
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
@@ -75,11 +95,10 @@ public class Interface extends JFrame
 
 			}
 		});
-		setAlwaysOnTop(true);
 		setVisible(true);
 
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.setBounds(0, 0, 156, 517);
+		tabbedPane.setBounds(0, 20, 156, 517);
 		getContentPane().add(tabbedPane);
 
 		JPanel settings = new JPanel();
@@ -137,6 +156,7 @@ public class Interface extends JFrame
 					int defaultB = LineType.My.defaultBackground.getBlue();
 
 					JFormattedTextField r = new JFormattedTextField(LineType.My.background.getRed());
+					r.setToolTipText("");
 					r.setBounds(8, 20, 26, 20);
 					colorOfYourMessages.add(r);
 
@@ -340,6 +360,7 @@ public class Interface extends JFrame
 					reset.setBounds(98, 20, 46, 20);
 					textColorOfOtherMessages.add(reset);
 
+
 					reset.addActionListener(new ActionListener()
 					{
 
@@ -373,7 +394,196 @@ public class Interface extends JFrame
 				}
 			}
 		}
+
+		JMenuBar menuBar = new JMenuBar();
+		menuBar.setBounds(0, 0, 676, 21);
+		getContentPane().add(menuBar);
+
+		JMenu mnNewMenu = new JMenu("Accounts");
+		menuBar.add(mnNewMenu);
+		mntmSignIn = new JMenuItem("Sign in");
+		mntmSignIn.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				openSignInWindow(false);
+			}
+		});
+		mnNewMenu.add(mntmSignIn);
+
+		JMenuItem mntmSignUp = new JMenuItem("Sign up");
+		mntmSignUp.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				openSignInWindow(true);
+			}
+		});
+		
+		mntmAccount = new JMenuItem("Account Info");
+		mntmAccount.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				openAccountInfoWindow();
+			}
+		});
+		mntmAccount.setVisible(false);
+		mnNewMenu.add(mntmAccount);
+		mnNewMenu.add(mntmSignUp);
 		repaint();
+	}JMenuItem mntmAccount;
+		JMenuItem mntmSignIn;
+
+	JDialog d;
+
+	public void openSignInWindow(boolean signUp)
+	{
+		Color color = new Color(220, 220, 230);
+		Font font = new Font("Tahoma", Font.PLAIN, 12);
+		JOptionPane pane = new JOptionPane(null, -1, 0, null, new Object[0], null);
+		pane.removeAll();
+		pane.setBackground(color);
+		pane.setLayout(new GridLayout(signUp ? 7 : 6, 1, 0, 0));
+
+		JLabel title2 = new JLabel(signUp ? "Signing up:" : "Signing in:");
+		title2.setFont(font);
+		title2.setHorizontalAlignment(SwingConstants.CENTER);
+		pane.add(title2);
+
+		JPanel login = new JPanel();
+		login.setBackground(color);
+		pane.add(login);
+		login.setLayout(new GridLayout(0, 2, 0, 0));
+
+		JLabel loginLabel = new JLabel("Login:");
+		loginLabel.setFont(font);
+		loginLabel.setBackground(color);
+		loginLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		login.add(loginLabel);
+
+		JTextField loginField = new JTextField();
+		login.add(loginField);
+
+		pane.add(new JLabel(""));
+
+		JPanel password = new JPanel();
+		password.setBackground(color);
+		pane.add(password);
+		password.setLayout(new GridLayout(0, 2, 0, 0));
+
+		JLabel passwordLabel = new JLabel("Password:");
+		passwordLabel.setFont(font);
+		passwordLabel.setBackground(color);
+		passwordLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		password.add(passwordLabel);
+
+		JPasswordField passwordField = new JPasswordField();
+		password.add(passwordField);
+
+		JPanel passwordRepeat = new JPanel();
+		passwordRepeat.setBackground(color);
+		passwordRepeat.setLayout(new GridLayout(0, 2, 0, 0));
+
+		JLabel passwordRepeatLabel = new JLabel("Password Repeat:");
+		passwordRepeatLabel.setFont(font);
+		passwordRepeatLabel.setBackground(color);
+		passwordRepeatLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+		JPasswordField passwordRepeatField = new JPasswordField();
+		if (signUp)
+		{
+			pane.add(passwordRepeat);
+
+			passwordRepeat.add(passwordRepeatLabel);
+			passwordRepeat.add(passwordRepeatField);
+		}
+
+		pane.add(new JLabel(""));
+
+		JButton okBtn = new JButton("Ok");
+		okBtn.addActionListener(new ActionListener()
+		{
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					if (new String(passwordField.getPassword()).equals(new String(passwordRepeatField.getPassword())) || !signUp)
+					{
+						client.lastLogin=loginField.getText();
+						client.lastPassword=new String(passwordField.getPassword());
+						String encryptedLogin = Encryptor.encrypt(loginField.getText(), client.encryptionKey, EncryptionType.None, EncryptionType.Client);
+						String encryptedPassword = Encryptor.encrypt(new String(passwordField.getPassword()), client.encryptionKey, EncryptionType.None, EncryptionType.Client);
+						client.writer.writeObject(new SignPacket(encryptedLogin, encryptedPassword, EncryptionType.Client, client.getAddress(), signUp));
+						d.setVisible(false);
+						d = null;
+					}
+					else JOptionPane.showMessageDialog(null, "Password repeat is wrong!");
+
+				}
+				catch (Exception exc)
+				{
+					exc.printStackTrace();
+				}
+
+			}
+		});
+
+		okBtn.setBackground(Color.WHITE);
+		pane.add(okBtn);
+
+		d = pane.createDialog("Accounts");
+		d.setLocation(getLocation().x + getSize().width / 2, getLocation().y + getSize().height / 2);
+		d.setSize(240, 200);
+		d.setVisible(true);
+	}
+	public void openAccountInfoWindow()
+	{
+		Color color = new Color(220, 220, 230);
+		Font font = new Font("Tahoma", Font.PLAIN, 12);
+		JOptionPane pane = new JOptionPane(null, -1, 0, null, new Object[0], null);
+		pane.removeAll();
+		pane.setBackground(color);
+		pane.setLayout(new GridLayout(5, 1, 0, 0));
+
+		JPanel login = new JPanel();
+		login.setBackground(color);
+		pane.add(login);
+		login.setLayout(new GridLayout(0, 2, 0, 0));
+
+		JLabel loginLabel = new JLabel("Login:");
+		loginLabel.setFont(font);
+		loginLabel.setBackground(color);
+		loginLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		login.add(loginLabel);
+
+		JTextField loginField = new JTextField(client.login);
+		loginField.setEditable(false);
+		login.add(loginField);
+
+		pane.add(new JLabel(""));
+
+		JPanel password = new JPanel();
+		password.setBackground(color);
+		pane.add(password);
+		password.setLayout(new GridLayout(0, 2, 0, 0));
+
+		JLabel passwordLabel = new JLabel("Password:");
+		passwordLabel.setFont(font);
+		passwordLabel.setBackground(color);
+		passwordLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		password.add(passwordLabel);
+
+		JPasswordField passwordField = new JPasswordField(client.password);
+		passwordField.setEditable(false);
+		password.add(passwordField);
+
+		d = pane.createDialog("Account's Info");
+		d.setLocation(getLocation().x + getSize().width / 2, getLocation().y + getSize().height / 2);
+		d.setSize(240, 200);
+		d.setVisible(true);
 	}
 
 	public void addContactBtn(String ip)
@@ -399,12 +609,14 @@ public class Interface extends JFrame
 		});
 		if (contactBtnsList.size() != 0)
 			b.setLocation(0, contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40);
+		else b.setLocation(0, 0);
 		b.setSize(contactBtns.getWidth(), 40);
+		contactBtnsList.add(b);
+		chatsList.put(ip, new Chat(i.chats, ip, i));
 		contactBtns.setSize(contactBtns.getWidth(), contactBtnsList.size() * 40);
-		scrollBar.setMaximum(contactBtnsList.size());
 
 		contactBtns.add(b);
-		contactBtnsList.add(b);
+		scrollBar.setMaximum(contactBtnsList.size());
 
 	}
 
@@ -574,5 +786,30 @@ public class Interface extends JFrame
 
 	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
 
-	
+	private static void addPopup(Component component, final JPopupMenu popup)
+	{
+		component.addMouseListener(new MouseAdapter()
+		{
+			public void mousePressed(MouseEvent e)
+			{
+				if (e.isPopupTrigger())
+				{
+					showMenu(e);
+				}
+			}
+
+			public void mouseReleased(MouseEvent e)
+			{
+				if (e.isPopupTrigger())
+				{
+					showMenu(e);
+				}
+			}
+
+			private void showMenu(MouseEvent e)
+			{
+				popup.show(e.getComponent(), e.getX(), e.getY());
+			}
+		});
+	}
 }

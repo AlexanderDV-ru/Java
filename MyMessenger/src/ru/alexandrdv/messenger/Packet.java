@@ -7,15 +7,15 @@ import ru.alexandrdv.messenger.Encryptor.EncryptionType;
 public class Packet implements Serializable
 {
 	private static final long serialVersionUID = -5820873265290615784L;
-	public final boolean isQuery;
+	public final PacketType packetType;
 	public final String sender;
 	public EncryptionType type;
 
-	public Packet(boolean isQuery, EncryptionType type,String sender)
+	public Packet(PacketType packetType, EncryptionType type, String sender)
 	{
 		super();
-		this.isQuery = isQuery;
-		this.sender=sender;
+		this.packetType = packetType;
+		this.sender = sender;
 		this.type = type;
 	}
 
@@ -24,10 +24,27 @@ public class Packet implements Serializable
 		private static final long serialVersionUID = 9036846116178336866L;
 		public String query;
 
-		public QueryPacket(String query, EncryptionType type,String sender)
+		public QueryPacket(String query, EncryptionType type, String sender)
 		{
-			super(true, type,sender);
+			super(PacketType.Query, type, sender);
 			this.query = query;
+		}
+
+	}
+
+	static public class SignPacket extends Packet
+	{
+		private static final long serialVersionUID = -1224420620462717795L;
+		public String login;
+		public String password;
+		public boolean signUp;
+
+		public SignPacket(String login, String password, EncryptionType type, String sender, boolean signUp)
+		{
+			super(PacketType.Sign, type, sender);
+			this.login = login;
+			this.password = password;
+			this.signUp = signUp;
 		}
 
 	}
@@ -37,11 +54,18 @@ public class Packet implements Serializable
 		private static final long serialVersionUID = -8520455807015143770L;
 		public String reciever, msg;
 
-		public MessagePacket(String reciever, String msg, EncryptionType type,String sender)
+		public MessagePacket(String reciever, String msg, EncryptionType type, String sender)
 		{
-			super(false, type,sender);
+			super(PacketType.Message, type, sender);
 			this.reciever = reciever;
 			this.msg = msg;
 		}
+	}
+
+	public static enum PacketType
+	{
+		Message,
+		Query,
+		Sign
 	}
 }

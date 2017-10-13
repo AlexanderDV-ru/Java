@@ -19,7 +19,6 @@ public abstract class CmdGUI
 	{
 		f = new JFrame();
 		f.setDefaultCloseOperation(3);
-		f.setAlwaysOnTop(true);
 		f.setTitle(" - Console");
 		f.setSize(758, 507);
 		f.setResizable(false);
