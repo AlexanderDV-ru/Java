@@ -48,7 +48,6 @@ public class Client extends CmdGUI
 					Packet p;
 					for (; socket != null;)
 					{
-						System.out.println(writer);
 						if ((p = (Packet) reader.readObject()) != null)
 						{
 							if (p.packetType == PacketType.Message)
@@ -91,6 +90,7 @@ public class Client extends CmdGUI
 										password = lastPassword;
 										lastLogin = "";
 										lastPassword = "";
+										i.messages.setVisible(true);
 										i.mntmSignIn.setVisible(false);
 										i.mntmAccount.setVisible(true);
 									}
@@ -212,7 +212,7 @@ public class Client extends CmdGUI
 		}
 	}
 
-	private boolean sendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt)
+	public boolean sendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt)
 	{
 		try
 		{
@@ -227,7 +227,7 @@ public class Client extends CmdGUI
 		}
 	}
 
-	private boolean resendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt, String sender)
+	public boolean resendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt, String sender)
 	{
 		try
 		{

@@ -43,12 +43,16 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import ru.alexandrdv.messenger.Encryptor;
 import ru.alexandrdv.messenger.Encryptor.EncryptionType;
 import ru.alexandrdv.messenger.Packet.SignPacket;
+import javax.swing.border.BevelBorder;
+import javax.swing.UIManager;
+import javax.swing.JRadioButton;
 
 public class Interface extends JFrame
 {
@@ -79,10 +83,6 @@ public class Interface extends JFrame
 		this.client = client;
 		getContentPane().setLayout(null);
 		loadColors();
-
-		chats = new JTabbedPane(JTabbedPane.TOP);
-		chats.setBounds(159, 20, 517, 515);
-		getContentPane().add(chats);
 		setDefaultCloseOperation(3);
 
 		setSize(692, 629);
@@ -431,10 +431,56 @@ public class Interface extends JFrame
 		mntmAccount.setVisible(false);
 		mnNewMenu.add(mntmAccount);
 		mnNewMenu.add(mntmSignUp);
+		
+		messages = new JPanel();
+		messages.setVisible(false);
+		messages.setBounds(159, 20, 517, 574);
+		getContentPane().add(messages);
+		messages.setLayout(null);
+		
+				chats = new JTabbedPane(JTabbedPane.TOP);
+				chats.setBounds(0, 2, 500, 484);
+				messages.add(chats);
+				
+				JButton btnNewButton = new JButton("Send");
+				btnNewButton.setBackground(Color.WHITE);
+				btnNewButton.setBounds(452, 545, 65, 29);
+				messages.add(btnNewButton);
+				
+				JTextArea textArea = new JTextArea();
+				textArea.setBorder(UIManager.getBorder("PasswordField.border"));
+				textArea.setBounds(0, 489, 451, 85);
+				messages.add(textArea);
+				
+				JScrollBar scrollBar_1 = new JScrollBar();
+				scrollBar_1.setBounds(500, 2, 17, 484);
+				messages.add(scrollBar_1);
+				btnNewButton.addActionListener(new ActionListener()
+				{
+					
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						
+							if (client.signedIn)
+							{
+								if (client.reciever != null && !client.reciever.equals(""))
+								{
+									String msg = textArea.getText();
+									client.sendTo(client.writer, ((Chat) i.chats.getSelectedComponent()).user, Encryptor.encrypt(msg, client.encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
+									((Chat) i.chats.getSelectedComponent()).addMsg(msg.split("\n"), true);
+								textArea.setText("");
+								}
+							}
+							else client.println("You weren't sign in!");
+						
+						
+					}
+				});
 		repaint();
 	}JMenuItem mntmAccount;
 		JMenuItem mntmSignIn;
-
+		JPanel messages;
 	JDialog d;
 
 	public void openSignInWindow(boolean signUp)
