@@ -41,11 +41,11 @@ public class Server extends CmdGUI
 		}
 	}
 
-	private boolean sendTo(ObjectOutputStream os,String reciever, String msg, EncryptionType crypt)
+	private boolean sendTo(ObjectOutputStream os,String reciever, String msg, EncryptionType crypt,String sender)
 	{
 		try
 		{
-			os.writeObject(new MessagePacket(reciever, msg, crypt));
+			os.writeObject(new MessagePacket(reciever, msg, crypt,sender));
 			return true;
 		}
 		catch (Exception e)
@@ -54,11 +54,11 @@ public class Server extends CmdGUI
 			return false;
 		}
 	}
-	private boolean sendQuery(ObjectOutputStream os,String query, EncryptionType crypt)
+	private boolean sendQuery(ObjectOutputStream os,String query, EncryptionType crypt,String sender)
 	{
 		try
 		{
-			os.writeObject(new QueryPacket(query, crypt));
+			os.writeObject(new QueryPacket(query, crypt,sender));
 			return true;
 		}
 		catch (Exception e)
@@ -89,21 +89,21 @@ public class Server extends CmdGUI
 								MessagePacket msgPacket=(MessagePacket)p;
 								println(msgPacket.msg);
 								if(msgPacket.type==EncryptionType.Client)
-									sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double);
+									sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double,msgPacket.sender);
 								if(msgPacket.type==EncryptionType.Double)
-									sendTo(writer,msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client);
+									sendTo(writer,msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client,msgPacket.sender);
 								if(msgPacket.type==EncryptionType.Server)
 								{
 									println(Encryptor.encrypt(msgPacket.msg, 12, EncryptionType.Server, EncryptionType.None));
 									if(clientByIpAndPort.containsKey(msgPacket.reciever))
-										sendTo(clientByIpAndPort.get(msgPacket.reciever).os, msgPacket.reciever, msgPacket.msg, EncryptionType.Server);
+										sendTo(clientByIpAndPort.get(msgPacket.reciever).os, msgPacket.reciever, msgPacket.msg, EncryptionType.Server,msgPacket.sender);
 										
 								}
 							}
 							else
 							{
 								QueryPacket q=(QueryPacket)p;
-								sendQuery(writer,clientByIpAndPort.containsKey(q.query)+"", EncryptionType.None);
+								sendQuery(writer,clientByIpAndPort.containsKey(q.query)+"", EncryptionType.None,"Server");
 							}
 						}
 					}

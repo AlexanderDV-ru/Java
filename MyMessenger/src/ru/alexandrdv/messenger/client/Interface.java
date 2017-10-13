@@ -7,6 +7,8 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -19,25 +21,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 
+import javax.swing.BoxLayout;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-import javax.swing.SwingConstants;
-
-import ru.alexandrdv.messenger.Encryptor.EncryptionType;
-
 import javax.swing.JTabbedPane;
-import javax.swing.BoxLayout;
+import javax.swing.SwingConstants;
 
 public class Interface extends JFrame
 {
 	private static final long serialVersionUID = -7199428079194503335L;
-	public ArrayList<Line> lines = new ArrayList<Line>();
-	public ArrayList<MsgContainer> rects = new ArrayList<MsgContainer>();
-	JPanel chat;
+	// JPanel chat;
 	JPanel contactBtns;
 
 	public int parseI(String s)
@@ -51,20 +50,20 @@ public class Interface extends JFrame
 		return Integer.parseInt(i);
 	}
 
+	JPanel contacts;
 	Client client;
-
+	JScrollBar scrollBar = new JScrollBar();
+	JTabbedPane chats;
 	public Interface(Client client)
 	{
 		this.client = client;
 		getContentPane().setLayout(null);
 		loadColors();
 
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(157, 0, 519, 517);
-		getContentPane().add(scrollPane);
+		chats = new JTabbedPane(JTabbedPane.TOP);
+		chats.setBounds(159, 0, 517, 515);
+		getContentPane().add(chats);
 		setDefaultCloseOperation(3);
-		chat = new JPanel();
-		scrollPane.setViewportView(chat);
 
 		setSize(692, 552);
 		addWindowListener(new WindowAdapter()
@@ -78,8 +77,6 @@ public class Interface extends JFrame
 		});
 		setAlwaysOnTop(true);
 		setVisible(true);
-		this.lines.add(new Line(chat, 0, getTime(), LineType.Splitter, false));
-		chat.setLayout(null);
 
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setBounds(0, 0, 156, 517);
@@ -89,16 +86,31 @@ public class Interface extends JFrame
 		tabbedPane.addTab(" Settings", null, settings, null);
 		settings.setLayout(new BoxLayout(settings, BoxLayout.X_AXIS));
 
-		JPanel contacts = new JPanel();
+		contacts = new JPanel();
 		tabbedPane.addTab(" Contacts", null, contacts, null);
-		contacts.setLayout(new BoxLayout(contacts, BoxLayout.X_AXIS));
-
-		JScrollPane scrollPane_1 = new JScrollPane();
-		contacts.add(scrollPane_1);
+		contacts.setLayout(null);
 
 		contactBtns = new JPanel();
+		scrollBar.setMaximum(0);
+
+		scrollBar.addAdjustmentListener(new AdjustmentListener()
+		{
+
+			@Override
+			public void adjustmentValueChanged(AdjustmentEvent e)
+			{
+				contactBtns.setLocation(contactBtns.getLocation().x, -scrollBar.getValue() * 40);
+				scrollBar.getModel().setExtent(12);
+
+			}
+		});
+
+		scrollBar.setBounds(134, 0, 17, 489);
+		contacts.add(scrollBar);
+
+		contactBtns.setBounds(0, 0, 134, 489);
+		contacts.add(contactBtns);
 		contactBtns.setLayout(null);
-		scrollPane_1.setViewportView(contactBtns);
 
 		JScrollPane optionPaneScroller = new JScrollPane();
 		optionPaneScroller.setBounds(0, 47, 156, 470);
@@ -366,13 +378,13 @@ public class Interface extends JFrame
 
 	public void addContactBtn(String ip)
 	{
-		
+
 		for (Button b1 : contactBtnsList)
 			if (b1.getLabel().equals(ip))
 				return;
-		if(ip==null)
-return;
-		if(ip.equals(""))
+		if (ip == null)
+			return;
+		if (ip.equals(""))
 			return;
 		Button b = new Button(ip);
 		b.addActionListener(new ActionListener()
@@ -387,10 +399,13 @@ return;
 		});
 		if (contactBtnsList.size() != 0)
 			b.setLocation(0, contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40);
-		b.setSize(contactBtns.getSize().width, 40);
-		contactBtns.setSize(contactBtns.getSize().width, contactBtnsList.size()*40);
+		b.setSize(contactBtns.getWidth(), 40);
+		contactBtns.setSize(contactBtns.getWidth(), contactBtnsList.size() * 40);
+		scrollBar.setMaximum(contactBtnsList.size());
+
 		contactBtns.add(b);
 		contactBtnsList.add(b);
+
 	}
 
 	ArrayList<Button> contactBtnsList = new ArrayList<Button>();
@@ -398,8 +413,7 @@ return;
 	public void repaintAll()
 	{
 		repaint();
-		for (Line in : lines)
-			in.repaint();
+
 	}
 
 	public void saveColors()
@@ -420,54 +434,6 @@ return;
 			e.printStackTrace();
 		}
 
-	}
-
-	public void addMsg(String[] lines, boolean my)
-	{
-		Container r = chat;
-		this.lines.add(new Line(chat, this.lines.get(this.lines.size() - 1).getLocation().y + 20, "", LineType.Splitter, my));
-		this.lines.add(new Line(chat, this.lines.get(this.lines.size() - 1).getLocation().y + 20, getTime(), LineType.Splitter, my));
-		int y = this.lines.get(this.lines.size() - 1).getLocation().y - 2;
-		String mt = this.lines.get(this.lines.size() - 1).getText();
-		for (String line : lines)
-		{
-			if ((getFontMetrics(getFont()).stringWidth(line)) + 50 > getContentPane().getWidth())
-			{
-				String txt = "";
-				for (char c : line.toCharArray())
-				{
-
-					if ((getFontMetrics(getFont()).stringWidth(txt + c)) + 50 > getContentPane().getWidth())
-					{
-						this.lines.add(new Line(chat, this.lines.get(this.lines.size() - 1).getLocation().y + 20, " " + txt, my ? LineType.My : LineType.Others, my));
-						if ((txt + c).length() > mt.length())
-							mt = txt + c;
-						txt = "";
-					}
-					txt += c;
-
-				}
-				this.lines.add(new Line(chat, this.lines.get(this.lines.size() - 1).getLocation().y + 20, " " + txt, my ? LineType.My : LineType.Others, my));
-				if (txt.length() > mt.length())
-					mt = txt;
-			}
-			else
-			{
-				this.lines.add(new Line(chat, this.lines.get(this.lines.size() - 1).getLocation().y + 20, " " + line, my ? LineType.My : LineType.Others, my));
-				if (line.length() > mt.length())
-					mt = line;
-			}
-
-		}
-		rects.add(new MsgContainer(chat, my, my ? r.getSize().width - (int) (getFontMetrics(getFont()).stringWidth(mt) * 1.05f + 20) : 4, y, (int) (getFontMetrics(getFont()).stringWidth(mt) * 1.05f + 20), this.lines.get(this.lines.size() - 1).getLocation().y + 2 - y + 20, 10));
-
-		if (this.lines.size() > 100000)
-			for (Line line : this.lines)
-				line.setLocation(line.getLocation().x, line.getLocation().y - 20 * (lines.length + 1));
-		if (this.lines.size() > 100000)
-			for (MsgContainer rect : this.rects)
-				rect.setLocation(rect.getLocation().x, rect.getLocation().y - 20 * (lines.length + 1));
-		repaint();
 	}
 
 	public String getTime()
@@ -509,7 +475,7 @@ return;
 
 	}
 
-	public class Line extends JLabel
+	public static class Line extends JLabel
 	{
 		public LineType type;
 
@@ -518,9 +484,6 @@ return;
 			super();
 			setText(text);
 			setLocation(10, y);
-			// setEditable(false);
-			// setSelectionColor(t.background);
-			// setSelectedTextColor(t.foreground);
 			setSize(f.getSize().width - 20, 20);
 			setHorizontalAlignment(isMy ? SwingConstants.RIGHT : SwingConstants.LEFT);
 			setForeground(t.foreground);
@@ -537,7 +500,7 @@ return;
 
 	}
 
-	enum LineType
+	static enum LineType
 	{
 		My(new Color(255, 217, 242), Color.white),
 		Others(new Color(217, 242, 255), Color.white),
@@ -553,7 +516,7 @@ return;
 		public Color background, foreground, defaultBackground, defaultForeground;
 	}
 
-	class RoundedRect extends JPanel
+	static class RoundedRect extends JPanel
 	{
 		Color c;
 
@@ -581,7 +544,7 @@ return;
 		}
 	}
 
-	class MsgContainer extends JPanel
+	static class MsgContainer extends JPanel
 	{
 		boolean my;
 
@@ -608,4 +571,8 @@ return;
 			g.fillRect(0, size, getWidth() - 1, getHeight() - size * 2 - 1);
 		}
 	}
+
+	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
+
+	
 }

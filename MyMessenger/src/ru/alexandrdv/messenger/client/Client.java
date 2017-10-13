@@ -1,16 +1,10 @@
 package ru.alexandrdv.messenger.client;
 
-import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Calendar;
-
-import javax.swing.JOptionPane;
 
 import ru.alexandrdv.messenger.CmdGUI;
 import ru.alexandrdv.messenger.Encryptor;
@@ -18,7 +12,6 @@ import ru.alexandrdv.messenger.Encryptor.EncryptionType;
 import ru.alexandrdv.messenger.Packet;
 import ru.alexandrdv.messenger.Packet.MessagePacket;
 import ru.alexandrdv.messenger.Packet.QueryPacket;
-import ru.alexandrdv.messenger.client.Interface.LineType;
 
 public class Client extends CmdGUI
 {
@@ -53,13 +46,13 @@ public class Client extends CmdGUI
 							{
 								MessagePacket msgPacket = (MessagePacket) p;
 								if (msgPacket.type == EncryptionType.Server)
-									sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Server, EncryptionType.Double), EncryptionType.Double);
+									resendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Server, EncryptionType.Double), EncryptionType.Double,msgPacket.sender);
 								if (msgPacket.type == EncryptionType.Double)
-									sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Double, EncryptionType.Server), EncryptionType.Server);
+									resendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Double, EncryptionType.Server), EncryptionType.Server,msgPacket.sender);
 								if (msgPacket.type == EncryptionType.Client)
 								{
 									println(Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Client, EncryptionType.None));
-									i.addMsg(Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Client, EncryptionType.None).split("\n"), false);
+									i.chatsList.get(msgPacket.sender).addMsg(Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Client, EncryptionType.None).split("\n"), false);
 								}
 							}
 							else
@@ -69,12 +62,14 @@ public class Client extends CmdGUI
 								{
 									reciever = lastToReciever;
 									lastToReciever = "";
+									i.addContactBtn(reciever);
+									i.chatsList.put(reciever, new Chat(i.chats, reciever, i));
 								}
 								else if (queryPacket.query.equals("false"))
 								{
 									reciever = "";
 									lastToReciever = "";
-									JOptionPane.showMessageDialog(null, "This user isn't online or hasn't this programm!!");
+									println("This user isn't online or hasn't this programm!!");
 								}
 							}
 						}
@@ -118,7 +113,7 @@ public class Client extends CmdGUI
 					for (int i = 2; i < args.length; i++)
 						msg += args[i] + " ";
 					sendTo(writer, reciever, Encryptor.encrypt(msg, encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
-					i.addMsg(msg.replace("\\n", "\n").split("\n"), true);
+					i.chatsList.get(reciever).addMsg(msg.replace("\\n", "\n").split("\n"), true);
 				}
 				// TODO Create msg sys
 				// else println(MsgSystem.get("notenoughargs").replace("%cmd%",
@@ -128,11 +123,14 @@ public class Client extends CmdGUI
 
 				if (args.length > 1)
 				{
-					String msg = "";
-					for (int i = 1; i < args.length; i++)
-						msg += args[i] + " ";
-					sendTo(writer, reciever, Encryptor.encrypt(msg, encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
-					i.addMsg(msg.replace("\\n", "\n").split("\n"), true);
+					if (reciever != null && !reciever.equals(""))
+					{
+						String msg = "";
+						for (int i = 1; i < args.length; i++)
+							msg += args[i] + " ";
+						sendTo(writer, reciever, Encryptor.encrypt(msg, encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
+						i.chatsList.get(reciever).addMsg(msg.replace("\\n", "\n").split("\n"), true);
+					}
 				}
 				// TODO Create msg sys
 				// else println(MsgSystem.get("notenoughargs").replace("%cmd%",
@@ -142,10 +140,10 @@ public class Client extends CmdGUI
 
 				if (args.length > 1)
 				{
+					args[1]=args[1].replace("lh","192.168.0.2");
 					lastToReciever = args[1];
-					reciever="";
+					reciever = "";
 					sendQuery(writer, args[1], EncryptionType.None);
-					i.addContactBtn(args[1]);
 				}
 				// TODO Create msg sys
 				// else println(MsgSystem.get("notenoughargs").replace("%cmd%",
@@ -170,7 +168,21 @@ public class Client extends CmdGUI
 		try
 		{
 
-			os.writeObject(new MessagePacket(reciever, msg, crypt));
+			os.writeObject(new MessagePacket(reciever, msg, crypt, socket.getLocalAddress().getHostAddress() + ":" + socket.getLocalPort()));
+			return true;
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			return false;
+		}
+	}
+	private boolean resendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt,String sender)
+	{
+		try
+		{
+
+			os.writeObject(new MessagePacket(reciever, msg, crypt, sender));
 			return true;
 		}
 		catch (Exception e)
@@ -185,7 +197,7 @@ public class Client extends CmdGUI
 		try
 		{
 
-			os.writeObject(new QueryPacket(query, crypt));
+			os.writeObject(new QueryPacket(query, crypt, socket.getLocalAddress().getHostAddress() + ":" + socket.getLocalPort()));
 			return true;
 		}
 		catch (Exception e)
