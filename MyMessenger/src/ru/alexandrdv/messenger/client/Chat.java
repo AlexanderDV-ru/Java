@@ -1,5 +1,6 @@
 package ru.alexandrdv.messenger.client;
 
+import java.awt.Color;
 import java.awt.Container;
 import java.util.ArrayList;
 
@@ -19,6 +20,8 @@ public class Chat extends JPanel
 	public Chat(JTabbedPane chats, String user,Interface i)
 	{
 		this.lines.add(new Line(this, 0, i.getTime(), LineType.Splitter, false));
+
+		setBackground(Color.WHITE);
 		this.user = user;
 		this.setLayout(null);
 		chats.addTab(user, this);

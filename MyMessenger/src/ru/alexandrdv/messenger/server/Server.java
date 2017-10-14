@@ -73,11 +73,11 @@ public class Server extends CmdGUI
 		}
 	}
 
-	private boolean sendQuery(ObjectOutputStream os, String query, EncryptionType crypt, String sender)
+	private boolean sendQuery(ObjectOutputStream os, String query, String argument,EncryptionType crypt, String sender)
 	{
 		try
 		{
-			os.writeObject(new QueryPacket(query, crypt, sender));
+			os.writeObject(new QueryPacket(query, argument,crypt, sender));
 			return true;
 		}
 		catch (Exception e)
@@ -127,8 +127,23 @@ public class Server extends CmdGUI
 								}
 								else if (p.packetType == PacketType.Query)
 								{
-									QueryPacket q = (QueryPacket) p;
-									sendQuery(writer, clientByIpAndPort.containsKey(q.query) + "", EncryptionType.None, "Server");
+									QueryPacket queryPacket = (QueryPacket) p;
+									switch (queryPacket.query)
+									{
+										case "isonline":
+										{
+											sendQuery(writer, clientByIpAndPort.containsKey(queryPacket.argument) + "",null, EncryptionType.None, "Server");
+										}
+											break;
+										case "getips":
+										{
+											String str="";
+											for(int i=0;i<clientByIpAndPort.keySet().size();i++)
+												str+=" "+clientByIpAndPort.keySet().toArray()[i];
+											sendQuery(writer, "onlineips",str.substring(1), EncryptionType.None, "Server");
+										}
+											break;
+									}
 								}
 							}
 							if (p.packetType == PacketType.Sign)
@@ -150,9 +165,9 @@ public class Server extends CmdGUI
 										{
 											accounts.put(login, password);
 
-											sendQuery(writer, "Account created", EncryptionType.None, "Server");
+											sendQuery(writer, "Account created",null, EncryptionType.None, "Server");
 										}
-										else sendQuery(writer, "Account already exists", EncryptionType.None, "Server");
+										else sendQuery(writer, "Account already exists",null, EncryptionType.None, "Server");
 									}
 									else
 									{
@@ -160,10 +175,10 @@ public class Server extends CmdGUI
 											if (accounts.get(login).equals(password))
 											{
 												verified = true;
-												sendQuery(writer, "Account verified", EncryptionType.None, "Server");
+												sendQuery(writer, "Account verified",null, EncryptionType.None, "Server");
 											}
-											else sendQuery(writer, "Wrong Password", EncryptionType.None, "Server");
-										else sendQuery(writer, "Account not exists", EncryptionType.None, "Server");
+											else sendQuery(writer, "Wrong Password",null, EncryptionType.None, "Server");
+										else sendQuery(writer, "Account not exists",null, EncryptionType.None, "Server");
 
 									}
 

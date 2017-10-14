@@ -22,12 +22,13 @@ public class Packet implements Serializable
 	static public class QueryPacket extends Packet
 	{
 		private static final long serialVersionUID = 9036846116178336866L;
-		public String query;
+		public String query, argument;
 
-		public QueryPacket(String query, EncryptionType type, String sender)
+		public QueryPacket(String query, String argument, EncryptionType type, String sender)
 		{
 			super(PacketType.Query, type, sender);
 			this.query = query;
+			this.argument = argument;
 		}
 
 	}

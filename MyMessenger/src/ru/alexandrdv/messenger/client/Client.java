@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Calendar;
+import java.util.Iterator;
 
 import ru.alexandrdv.messenger.CmdGUI;
 import ru.alexandrdv.messenger.Encryptor;
@@ -82,6 +83,12 @@ public class Client extends CmdGUI
 										println("This user isn't online or hasn't this programm!!");
 									}
 										break;
+									case "onlineips":
+									{
+										for (String s : queryPacket.argument.split(" "))
+											i.addContactBtn(s);
+									}
+										break;
 									case "Account verified":
 									{
 										println("Account verified");
@@ -90,6 +97,8 @@ public class Client extends CmdGUI
 										password = lastPassword;
 										lastLogin = "";
 										lastPassword = "";
+										if(i.tabbedPane.indexOfTab(" Contacts")==-1)
+											i.tabbedPane.addTab(" Contacts", null, i.contacts, null);
 										i.messages.setVisible(true);
 										i.mntmSignIn.setVisible(false);
 										i.mntmAccount.setVisible(true);
@@ -192,14 +201,14 @@ public class Client extends CmdGUI
 					args[1] = args[1].replace("lh", "192.168.0.2");
 					lastToReciever = args[1];
 					reciever = "";
-					sendQuery(writer, args[1], EncryptionType.None);
+					sendQuery(writer, args[1], null, EncryptionType.None, getAddress());
 				}
 				// TODO Create msg sys
 				// else println(MsgSystem.get("notenoughargs").replace("%cmd%",
 				// args[0]));
 				break;
 			case "exit":
-				sendQuery(writer, "exit", EncryptionType.None);
+				sendQuery(writer, "exit", null, EncryptionType.None, getAddress());
 				try
 				{
 					socket.close();
@@ -242,12 +251,12 @@ public class Client extends CmdGUI
 		}
 	}
 
-	private boolean sendQuery(ObjectOutputStream os, String query, EncryptionType crypt)
+	public boolean sendQuery(ObjectOutputStream os, String query, String argument, EncryptionType crypt, String sender)
 	{
 		try
 		{
 
-			os.writeObject(new QueryPacket(query, crypt, getAddress()));
+			os.writeObject(new QueryPacket(query, argument, crypt, sender));
 			return true;
 		}
 		catch (Exception e)
