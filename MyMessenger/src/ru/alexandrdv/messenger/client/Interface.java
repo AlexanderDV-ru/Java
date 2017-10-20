@@ -2,20 +2,17 @@ package ru.alexandrdv.messenger.client;
 
 import java.awt.Button;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -39,20 +36,18 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollBar;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 import ru.alexandrdv.messenger.Encryptor;
 import ru.alexandrdv.messenger.Encryptor.EncryptionType;
 import ru.alexandrdv.messenger.Packet.SignPacket;
-import javax.swing.border.BevelBorder;
-import javax.swing.UIManager;
-import javax.swing.JRadioButton;
+import ru.alexandrdv.messenger.client.MyScrollPane.HBarType;
+import ru.alexandrdv.messenger.client.MyScrollPane.VBarType;
+import java.awt.Dimension;
 
 public class Interface extends JFrame
 {
@@ -74,18 +69,28 @@ public class Interface extends JFrame
 	Interface i;
 	JPanel contacts;
 	Client client;
-	JScrollBar scrollBar = new JScrollBar();
-	JTabbedPane chats;
+	MyScrollPane scroll;
 	JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+
 	public Interface(Client client)
 	{
+		setMinimumSize(new Dimension(360, 280));
 		i = this;
+		i.addComponentListener(new ComponentAdapter()
+		{
+			@Override
+			public void componentResized(ComponentEvent e)
+			{
+				resizeComponents();
+			}
+		});
 		this.client = client;
 		getContentPane().setLayout(null);
+
 		loadColors();
 		setDefaultCloseOperation(3);
 
-		setSize(1145, 629);
+		setSize(698, 629);
 		addWindowListener(new WindowAdapter()
 		{
 			@Override
@@ -97,7 +102,7 @@ public class Interface extends JFrame
 		});
 		setVisible(true);
 
-		tabbedPane.setBounds(0, 20, 156, 517);
+		tabbedPane.setBounds(0, 20, 156, 574);
 		getContentPane().add(tabbedPane);
 
 		JPanel settings = new JPanel();
@@ -106,31 +111,19 @@ public class Interface extends JFrame
 
 		contacts = new JPanel();
 		contacts.setLayout(null);
+		tabbedPane.addTab(" contacts", null, contacts, null);
+		scroll = new MyScrollPane(150, 470, 10, HBarType.None, VBarType.Left);
+		scroll.setLocation(0, 20);
+		contacts.add(scroll);
 
 		contactBtns = new JPanel();
-		scrollBar.setMaximum(0);
 
-		scrollBar.addAdjustmentListener(new AdjustmentListener()
-		{
-
-			@Override
-			public void adjustmentValueChanged(AdjustmentEvent e)
-			{
-				contactBtns.setLocation(contactBtns.getLocation().x, -scrollBar.getValue() * 40);
-				scrollBar.getModel().setExtent(12);
-
-			}
-		});
-
-		scrollBar.setBounds(134, 0, 17, 489);
-		contacts.add(scrollBar);
-
-		contactBtns.setBounds(0, 20, 134, 489);
-		contacts.add(contactBtns);
+		contactBtns.setBounds(0, 0, 134, 454);
+		scroll.add(contactBtns);
 		contactBtns.setLayout(null);
 
 		textField = new JTextField();
-		textField.setBounds(0, 0, 100, 20);
+		textField.setBounds(0, 0, 117, 20);
 		contacts.add(textField);
 
 		Button button = new Button("Find");
@@ -144,7 +137,7 @@ public class Interface extends JFrame
 
 			}
 		});
-		button.setBounds(100, 0, 32, 20);
+		button.setBounds(118, 0, 32, 20);
 		contacts.add(button);
 
 		settings.setLayout(null);
@@ -401,8 +394,8 @@ public class Interface extends JFrame
 			}
 		}
 
-		JMenuBar menuBar = new JMenuBar();
-		menuBar.setBounds(0, 0, 676, 21);
+		menuBar = new JMenuBar();
+		menuBar.setBounds(0, 0, (int)Math.max(i.getContentPane().getWidth(),i.getMinimumSize().getWidth()), 20);
 		getContentPane().add(menuBar);
 
 		JMenu mnNewMenu = new JMenu("Accounts");
@@ -444,26 +437,22 @@ public class Interface extends JFrame
 		getContentPane().add(messages);
 		messages.setLayout(null);
 
-		JScrollBar scrollBar_1 = new JScrollBar();
-		scrollBar_1.setBounds(500, 2, 17, 484);
-		messages.add(scrollBar_1);
+		chatsPanel = new JPanel();
+		chatsPanel.setBounds(0, 0, 517, 486);
+		messages.add(chatsPanel);
+		chatsPanel.setLayout(null);
 
-		chats = new JTabbedPane(JTabbedPane.TOP);
-		chats.setBounds(0, 2, 500, 484);
-		messages.add(chats);
-
-		JButton btnNewButton = new JButton("Send");
+		btnNewButton = new JButton("Send");
 		btnNewButton.setBackground(Color.WHITE);
 		btnNewButton.setBounds(452, 545, 65, 29);
 		messages.add(btnNewButton);
 
-		JTextArea textArea = new JTextArea();
+		textArea = new JTextArea();
 		textArea.setBackground(Color.WHITE);
 		textArea.setBorder(UIManager.getBorder("PasswordField.border"));
 		textArea.setBounds(0, 489, 451, 85);
 		messages.add(textArea);
-		
-		
+
 		btnNewButton.addActionListener(new ActionListener()
 		{
 
@@ -473,13 +462,15 @@ public class Interface extends JFrame
 
 				if (client.signedIn)
 				{
-
+					if (client.reciever != null && !client.reciever.equals(""))
 					{
 						String msg = textArea.getText();
-						client.sendTo(client.writer, ((Chat) i.chats.getSelectedComponent()).user, Encryptor.encrypt(msg, client.encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
-						((Chat) i.chats.getSelectedComponent()).addMsg(msg.split("\n"), true);
+						client.sendTo(client.writer, client.reciever, Encryptor.encrypt(msg, client.encryptionKey, EncryptionType.None, EncryptionType.Client), EncryptionType.Client);
+						i.chatsList.get(client.reciever).addMsg(msg.split("\n"), true);
 						textArea.setText("");
+						System.out.println();
 					}
+					else client.println("reciever==null|==\"\"");
 				}
 				else client.println("You weren't sign in!");
 
@@ -487,11 +478,32 @@ public class Interface extends JFrame
 		});
 		repaint();
 	}
+	public void resizeComponents()
+	{
+		menuBar.setSize(i.getContentPane().getWidth(), menuBar.getHeight());
+		tabbedPane.setSize(tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight());
+		messages.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight());
+		textArea.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth()-btnNewButton.getWidth(),(int)(i.getHeight()/i.getMinimumSize().getHeight()*30));
+		chatsPanel.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight()-textArea.getHeight());
+		textArea.setLocation(textArea.getX(), chatsPanel.getY()+chatsPanel.getHeight());
+		btnNewButton.setLocation(textArea.getX()+textArea.getWidth(), textArea.getY()+textArea.getHeight()-btnNewButton.getHeight());
+		for(String s:chatsList.keySet())
+		{
+			chatsList.get(s).scroll.setSize(chatsPanel.getWidth()-2, chatsPanel.getHeight()-2);
+			chatsList.get(s).setSize(chatsList.get(s).scroll.contentPane.getWidth(), chatsList.get(s).scroll.contentPane.getHeight());
+			chatsList.get(s).update();
+			//chatsList.get(s).right.setLocation(chatsList.get(s).scroll.viewport.getWidth()-chatsList.get(s).right.getWidth(), 0);
+		}
+	}
+	JButton btnNewButton;
+	JTextArea textArea;
+	JPanel chatsPanel;
 
 	JMenuItem mntmAccount;
 	JMenuItem mntmSignIn;
 	JPanel messages;
 	JDialog d;
+	JMenuBar menuBar;
 
 	public void openSignInWindow(boolean signUp)
 	{
@@ -651,18 +663,22 @@ public class Interface extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				client.Command(new String[] { "joinTo", b.getLabel() });
-
+				for (String key : chatsList.keySet())
+					chatsList.get(key).scroll.setVisible(false);
+				chatsList.get(b.getLabel()).scroll.setVisible(true);
 			}
 		});
 		if (contactBtnsList.size() != 0)
 			b.setLocation(0, contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40);
 		b.setSize(contactBtns.getWidth(), 40);
 		contactBtnsList.add(b);
-		chatsList.put(ip, new Chat(i.chats, ip, i));
+		chatsList.put(ip, new Chat(i.chatsPanel, ip, i));
 		contactBtns.setSize(contactBtns.getWidth(), contactBtnsList.size() * 40);
+		scroll.updateComponent(contactBtns);
+		scroll.update();
 
 		contactBtns.add(b);
-		scrollBar.setMaximum(contactBtnsList.size());
+		// scrollBar.setMaximum(contactBtnsList.size());
 
 	}
 
@@ -832,48 +848,4 @@ public class Interface extends JFrame
 
 	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
 	private JTextField textField;
-	static class MyScrollPane extends JPanel
-	{
-		JScrollBar horizontalScroller;
-		JScrollBar verticalScroller;
-		JPanel contentPane;
-		public MyScrollPane(int width,int height,int scroll)
-		{
-			setLayout(null);
-			setSize(width, height);
-			
-			horizontalScroller = new JScrollBar();
-			horizontalScroller.setOrientation(JScrollBar.HORIZONTAL);
-			horizontalScroller.setBounds(0, height-16, width-16, 16);
-			horizontalScroller.getModel().setExtent(horizontalScroller.getWidth()/scroll);
-			add(horizontalScroller);
-			
-			verticalScroller = new JScrollBar();
-			verticalScroller.setOrientation(JScrollBar.VERTICAL);
-			verticalScroller.setBounds(width-16, 0, 16, height-16);
-			verticalScroller.getModel().setExtent(verticalScroller.getHeight()/scroll);
-			add(verticalScroller);
-			
-			JPanel viewport = new JPanel();
-			viewport.setLayout(null);
-			viewport.setBounds(0, 0, width-16, height-16);
-			add(viewport);
-			
-			contentPane = new JPanel();
-			contentPane.setLayout(null);
-			contentPane.setBounds(0, 0, width-16, height-16);
-			viewport.add(contentPane);
-			
-			AdjustmentListener l=new AdjustmentListener()
-			{
-				@Override
-				public void adjustmentValueChanged(AdjustmentEvent e)
-				{
-					contentPane.setLocation(-horizontalScroller.getValue()*scroll, -verticalScroller.getValue()*scroll);
-				}
-			};
-			horizontalScroller.addAdjustmentListener(l);
-			verticalScroller.addAdjustmentListener(l);
-		}
-	}
 }

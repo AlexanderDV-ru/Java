@@ -112,27 +112,27 @@ public class Server extends CmdGUI
 								{
 
 									MessagePacket msgPacket = (MessagePacket) p;
-									println(msgPacket.msg);
+									println(msgPacket.args.get("msg"));
 									if (msgPacket.type == EncryptionType.Client)
-										sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double, msgPacket.sender);
+										sendTo(writer, msgPacket.args.get("reciever"), Encryptor.encrypt(msgPacket.args.get("msg"), encryptionKey, EncryptionType.Client, EncryptionType.Double), EncryptionType.Double, msgPacket.args.get("sender"));
 									if (msgPacket.type == EncryptionType.Double)
-										sendTo(writer, msgPacket.reciever, Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client, msgPacket.sender);
+										sendTo(writer, msgPacket.args.get("reciever"), Encryptor.encrypt(msgPacket.args.get("msg"), encryptionKey, EncryptionType.Double, EncryptionType.Client), EncryptionType.Client, msgPacket.args.get("sender"));
 									if (msgPacket.type == EncryptionType.Server)
 									{
-										println(Encryptor.encrypt(msgPacket.msg, encryptionKey, EncryptionType.Server, EncryptionType.None));
-										if (clientByIpAndPort.containsKey(msgPacket.reciever))
-											sendTo(clientByIpAndPort.get(msgPacket.reciever).os, msgPacket.reciever, msgPacket.msg, EncryptionType.Server, msgPacket.sender);
+										println(Encryptor.encrypt(msgPacket.args.get("msg"), encryptionKey, EncryptionType.Server, EncryptionType.None));
+										if (clientByIpAndPort.containsKey(msgPacket.args.get("reciever")))
+											sendTo(clientByIpAndPort.get(msgPacket.args.get("reciever")).os, msgPacket.args.get("reciever"), msgPacket.args.get("msg"), EncryptionType.Server, msgPacket.args.get("sender"));
 
 									}
 								}
 								else if (p.packetType == PacketType.Query)
 								{
 									QueryPacket queryPacket = (QueryPacket) p;
-									switch (queryPacket.query)
+									switch (queryPacket.args.get("query"))
 									{
 										case "isonline":
 										{
-											sendQuery(writer, clientByIpAndPort.containsKey(queryPacket.argument) + "",null, EncryptionType.None, "Server");
+											sendQuery(writer, clientByIpAndPort.containsKey(queryPacket.args.get("argument")) + "",null, EncryptionType.None, "Server");
 										}
 											break;
 										case "getips":
@@ -143,6 +143,16 @@ public class Server extends CmdGUI
 											sendQuery(writer, "onlineips",str.substring(1), EncryptionType.None, "Server");
 										}
 											break;
+										case "exit":
+										{
+											String ip=socket.getInetAddress().getHostAddress();
+											String port=socket.getPort()+"";
+											writer.close();
+											reader.close();
+											socket.close();
+											clientByIpAndPort.remove(ip+":"+port);
+										}
+											break;
 									}
 								}
 							}
@@ -151,14 +161,14 @@ public class Server extends CmdGUI
 								SignPacket signPacket = (SignPacket) p;
 								if (signPacket.type == EncryptionType.Client)
 								{
-									String login = Encryptor.encrypt(signPacket.password, encryptionKey, EncryptionType.Client, EncryptionType.Double);
-									String password = Encryptor.encrypt(signPacket.password, encryptionKey, EncryptionType.Client, EncryptionType.Double);
-									writer.writeObject(new SignPacket(login, password, EncryptionType.Double, signPacket.sender, signPacket.signUp));
+									String login = Encryptor.encrypt(signPacket.args.get("password"), encryptionKey, EncryptionType.Client, EncryptionType.Double);
+									String password = Encryptor.encrypt(signPacket.args.get("password"), encryptionKey, EncryptionType.Client, EncryptionType.Double);
+									writer.writeObject(new SignPacket(login, password, EncryptionType.Double, signPacket.args.get("sender"), signPacket.signUp));
 								}
 								if (signPacket.type == EncryptionType.Server)
 								{
-									String login = Encryptor.encrypt(signPacket.password, encryptionKey, EncryptionType.Server, EncryptionType.None);
-									String password = Encryptor.encrypt(signPacket.password, encryptionKey, EncryptionType.Server, EncryptionType.None).hashCode() + "";
+									String login = Encryptor.encrypt(signPacket.args.get("password"), encryptionKey, EncryptionType.Server, EncryptionType.None);
+									String password = Encryptor.encrypt(signPacket.args.get("password"), encryptionKey, EncryptionType.Server, EncryptionType.None).hashCode() + "";
 									if (signPacket.signUp)
 									{
 										if (!accounts.containsKey(login))
