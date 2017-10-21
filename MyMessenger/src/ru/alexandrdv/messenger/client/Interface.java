@@ -6,6 +6,7 @@ import java.awt.Container;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -41,6 +42,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.border.EtchedBorder;
 
 import ru.alexandrdv.messenger.Encryptor;
 import ru.alexandrdv.messenger.Encryptor.EncryptionType;
@@ -52,8 +54,24 @@ import java.awt.Dimension;
 public class Interface extends JFrame
 {
 	private static final long serialVersionUID = -7199428079194503335L;
-	// JPanel chat;
 	JPanel contactBtns;
+	JButton btnNewButton;
+	JTextArea textArea;
+	JPanel chatsPanel;
+	JMenuItem mntmAccount;
+	JMenuItem mntmSignIn;
+	JPanel messages;
+	JDialog d;
+	JMenuBar menuBar;
+	Interface i;
+	JPanel contacts;
+	Client client;
+	MyScrollPane scroll;
+	JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+	ArrayList<JButton> contactBtnsList = new ArrayList<JButton>();
+	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
+	JTextField textField;
+	Color selectedContact=Color.white,contact=new Color(230, 255, 255);
 
 	public int parseI(String s)
 	{
@@ -65,12 +83,6 @@ public class Interface extends JFrame
 				i += c;
 		return Integer.parseInt(i);
 	}
-
-	Interface i;
-	JPanel contacts;
-	Client client;
-	MyScrollPane scroll;
-	JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
 	public Interface(Client client)
 	{
@@ -120,6 +132,7 @@ public class Interface extends JFrame
 
 		contactBtns.setBounds(0, 0, 134, 454);
 		scroll.add(contactBtns);
+		contactBtns.setBackground(Color.lightGray);
 		contactBtns.setLayout(null);
 
 		textField = new JTextField();
@@ -395,7 +408,7 @@ public class Interface extends JFrame
 		}
 
 		menuBar = new JMenuBar();
-		menuBar.setBounds(0, 0, (int)Math.max(i.getContentPane().getWidth(),i.getMinimumSize().getWidth()), 20);
+		menuBar.setBounds(0, 0, (int) Math.max(i.getContentPane().getWidth(), i.getMinimumSize().getWidth()), 20);
 		getContentPane().add(menuBar);
 
 		JMenu mnNewMenu = new JMenu("Accounts");
@@ -478,33 +491,26 @@ public class Interface extends JFrame
 		});
 		repaint();
 	}
+
+	// This method resizes components relative window
 	public void resizeComponents()
 	{
 		menuBar.setSize(i.getContentPane().getWidth(), menuBar.getHeight());
-		tabbedPane.setSize(tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight());
-		messages.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight());
-		textArea.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth()-btnNewButton.getWidth(),(int)(i.getHeight()/i.getMinimumSize().getHeight()*30));
-		chatsPanel.setSize(i.getContentPane().getWidth()-tabbedPane.getWidth(), i.getContentPane().getHeight()-menuBar.getHeight()-textArea.getHeight());
-		textArea.setLocation(textArea.getX(), chatsPanel.getY()+chatsPanel.getHeight());
-		btnNewButton.setLocation(textArea.getX()+textArea.getWidth(), textArea.getY()+textArea.getHeight()-btnNewButton.getHeight());
-		for(String s:chatsList.keySet())
+		tabbedPane.setSize(tabbedPane.getWidth(), i.getContentPane().getHeight() - menuBar.getHeight());
+		messages.setSize(i.getContentPane().getWidth() - tabbedPane.getWidth(), i.getContentPane().getHeight() - menuBar.getHeight());
+		textArea.setSize(i.getContentPane().getWidth() - tabbedPane.getWidth() - btnNewButton.getWidth(), (int) (i.getHeight() / i.getMinimumSize().getHeight() * 30));
+		chatsPanel.setSize(i.getContentPane().getWidth() - tabbedPane.getWidth(), i.getContentPane().getHeight() - menuBar.getHeight() - textArea.getHeight());
+		textArea.setLocation(textArea.getX(), chatsPanel.getY() + chatsPanel.getHeight());
+		btnNewButton.setLocation(textArea.getX() + textArea.getWidth(), textArea.getY() + textArea.getHeight() - btnNewButton.getHeight());
+		for (String s : chatsList.keySet())
 		{
-			chatsList.get(s).scroll.setSize(chatsPanel.getWidth()-2, chatsPanel.getHeight()-2);
+			chatsList.get(s).scroll.setSize(chatsPanel.getWidth() - 2, chatsPanel.getHeight() - 2);
 			chatsList.get(s).setSize(chatsList.get(s).scroll.contentPane.getWidth(), chatsList.get(s).scroll.contentPane.getHeight());
 			chatsList.get(s).update();
-			//chatsList.get(s).right.setLocation(chatsList.get(s).scroll.viewport.getWidth()-chatsList.get(s).right.getWidth(), 0);
 		}
 	}
-	JButton btnNewButton;
-	JTextArea textArea;
-	JPanel chatsPanel;
 
-	JMenuItem mntmAccount;
-	JMenuItem mntmSignIn;
-	JPanel messages;
-	JDialog d;
-	JMenuBar menuBar;
-
+	// This method
 	public void openSignInWindow(boolean signUp)
 	{
 		Color color = new Color(220, 220, 230);
@@ -652,10 +658,12 @@ public class Interface extends JFrame
 	public void addContactBtn(String ip)
 	{
 
-		for (Button b1 : contactBtnsList)
+		for (JButton b1 : contactBtnsList)
 			if (b1.getLabel().equals(ip))
 				return;
-		Button b = new Button(ip);
+		JButton b = new JButton(ip);
+		b.setBorderPainted(false);
+		b.setBackground(contact);
 		b.addActionListener(new ActionListener()
 		{
 
@@ -666,14 +674,18 @@ public class Interface extends JFrame
 				for (String key : chatsList.keySet())
 					chatsList.get(key).scroll.setVisible(false);
 				chatsList.get(b.getLabel()).scroll.setVisible(true);
+				for (JButton b1 : contactBtnsList)
+				{
+					b1.setBackground(contact);
+				}
+				b.setBackground(selectedContact);
 			}
 		});
-		if (contactBtnsList.size() != 0)
-			b.setLocation(0, contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40);
-		b.setSize(contactBtns.getWidth(), 40);
+		b.setLocation(1, contactBtnsList.size() != 0?contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40:0);
+		b.setSize(contactBtns.getWidth()-1, 39);
 		contactBtnsList.add(b);
 		chatsList.put(ip, new Chat(i.chatsPanel, ip, i));
-		contactBtns.setSize(contactBtns.getWidth(), contactBtnsList.size() * 40);
+		contactBtns.setSize(contactBtns.getWidth(), Math.max(contactBtns.getHeight(),(contactBtnsList.size() * 40)));
 		scroll.updateComponent(contactBtns);
 		scroll.update();
 
@@ -681,8 +693,6 @@ public class Interface extends JFrame
 		// scrollBar.setMaximum(contactBtnsList.size());
 
 	}
-
-	ArrayList<Button> contactBtnsList = new ArrayList<Button>();
 
 	public void repaintAll()
 	{
@@ -820,7 +830,10 @@ public class Interface extends JFrame
 
 	static class MsgContainer extends JPanel
 	{
+		private static final long serialVersionUID = 6435932028352462802L;
 		boolean my;
+		int size;
+		boolean[] rect;
 
 		public MsgContainer(Container f, boolean isMy, int x, int y, int w, int h, int rounding)
 		{
@@ -828,24 +841,41 @@ public class Interface extends JFrame
 			my = isMy;
 			setBounds(x, y, w, h);
 			size = rounding;
+			rect=new boolean[]{my?false:true,false,false,my?true:false};
 			f.add(this);
 		}
-
-		int size;
 
 		@Override
 		public void paint(Graphics g)
 		{
-			g.setColor(my ? LineType.My.background : LineType.Others.background);
-			g.fillOval(0, 0, size * 2, size * 2);
-			g.fillOval(getWidth() - size * 2 - 2, 0, size * 2, size * 2);
-			g.fillOval(getWidth() - size * 2 - 2, getHeight() - size * 2 - 2, size * 2, size * 2);
-			g.fillOval(0, getHeight() - size * 2 - 2, size * 2, size * 2);
-			g.fillRect(size, 0, getWidth() - size * 2 - 1, getHeight() - 1);
-			g.fillRect(0, size, getWidth() - 1, getHeight() - size * 2 - 1);
+			int offset = 3;
+			// Drawing shadow for message
+			g.setColor(new Color(168,168,168));
+			fillRoundedRect(g, 0, 1, getWidth() - offset, getHeight() - offset+1, size);
+
+			// Drawing rounded rectangle for message
+			Color c=my ? LineType.My.background : LineType.Others.background;
+			g.setColor(new Color(c.getRed()+8, c.getGreen()+8, c.getBlue()+8));
+			fillRoundedRect(g, 0, 0, getWidth() - offset, getHeight() - offset, size);
+			g.setColor(c);
+			fillRoundedRect(g, 1, 1, getWidth() - offset-1, getHeight() - offset-1, size);
+		}
+		void fillRoundedRect(Graphics g, int x1,int y1,int x2,int y2,int round)
+		{
+			fillMargin(g, x1 + size, y1 + size, size, size,rect[0]);
+			fillMargin(g, x1 + size, y2 - size, size, size,rect[1]);
+			fillMargin(g, x2 - size, y2 - size, size, size,rect[2]);
+			fillMargin(g, x2 - size, y1 + size, size, size,rect[3]);
+			g.fillRect(x1 + size, y1, x2 - size * 2 - x1, y2 - y1 + 1);
+			g.fillRect(x1, y1 + size, x2 - x1 + 1, y2 - size * 2 - y1);
+		}
+
+		void fillMargin(Graphics g, int x, int y, int w, int h,boolean quad)
+		{
+			if(!quad)
+				g.fillOval(x - w, y - h, w * 2, h * 2);
+			else
+				g.fillRect(x - w, y - h, w * 2+1, h * 2);
 		}
 	}
-
-	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
-	private JTextField textField;
 }

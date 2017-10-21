@@ -1,5 +1,6 @@
 package ru.alexandrdv.messenger.client;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
@@ -26,17 +27,19 @@ public class MyScrollPane extends JPanel
 		this.ht = ht;
 		setLayout(null);
 		setSize(width, height);
-		setBorder(UIManager.getBorder("PasswordField.border"));
+		setBackground(Color.WHITE);
 		height2=height - (ht == HBarType.None ? 0 : 16);
 		width2=width - (vt == VBarType.None ? 0 : 16);
 
 		viewport = new JPanel();
 		viewport.setLayout(null);
+		viewport.setBackground(Color.WHITE);
 		viewport.setBounds((vt == VBarType.Left ? 16 : 1), (ht == HBarType.Top ? 16 : 1), width2, height2);
 		super.add(viewport);
 
 		contentPane = new JPanel();
 		contentPane.setLayout(null);
+		contentPane.setBackground(Color.WHITE);
 		contentPane.setBounds(0, 0, width2, height2);
 		viewport.add(contentPane);
 
@@ -73,7 +76,7 @@ public class MyScrollPane extends JPanel
 		height2=getHeight() - (ht == HBarType.None ? 0 : 16);
 		width2=getWidth() - (vt == VBarType.None ? 0 : 16);
 		viewport.setBounds((vt == VBarType.Left ? 16 : 1), (ht == HBarType.Top ? 16 : 1), width2, height2);
-		contentPane.setSize(Math.max(contentPane.getWidth(),width2), Math.max(contentPane.getHeight(),height2));
+		contentPane.setSize(Math.max(viewport.getWidth(),width2), Math.max(viewport.getHeight(),height2));
 		if (ht != HBarType.None)
 		{
 			horizontalScroller.setBounds(0, (ht == HBarType.Bottom ? height2 : 0), width2, 16);
