@@ -71,7 +71,7 @@ public class Interface extends JFrame
 	ArrayList<JButton> contactBtnsList = new ArrayList<JButton>();
 	HashMap<String, Chat> chatsList = new HashMap<String, Chat>();
 	JTextField textField;
-	Color selectedContact=Color.white,contact=new Color(230, 255, 255);
+	Color selectedContact = Color.white, contact = new Color(230, 255, 255);
 
 	public int parseI(String s)
 	{
@@ -444,6 +444,19 @@ public class Interface extends JFrame
 		mnNewMenu.add(mntmAccount);
 		mnNewMenu.add(mntmSignUp);
 
+		JMenu mnDebug = new JMenu("Debug");
+		menuBar.add(mnDebug);
+
+		JMenuItem mntmConsole = new JMenuItem("Console");
+		mntmConsole.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				client.f.setVisible(true);
+			}
+		});
+		mnDebug.add(mntmConsole);
+
 		messages = new JPanel();
 		messages.setVisible(false);
 		messages.setBounds(159, 20, 517, 574);
@@ -659,10 +672,10 @@ public class Interface extends JFrame
 	{
 
 		for (JButton b1 : contactBtnsList)
-			if (b1.getLabel().equals(ip))
+			if (b1.getText().equals(ip))
 				return;
 		JButton b = new JButton(ip);
-		b.setBorderPainted(false);
+		b.setBorder(null);
 		b.setBackground(contact);
 		b.addActionListener(new ActionListener()
 		{
@@ -670,10 +683,10 @@ public class Interface extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				client.Command(new String[] { "joinTo", b.getLabel() });
+				client.Command(new String[] { "joinTo", b.getText() });
 				for (String key : chatsList.keySet())
 					chatsList.get(key).scroll.setVisible(false);
-				chatsList.get(b.getLabel()).scroll.setVisible(true);
+				chatsList.get(b.getText()).scroll.setVisible(true);
 				for (JButton b1 : contactBtnsList)
 				{
 					b1.setBackground(contact);
@@ -681,11 +694,11 @@ public class Interface extends JFrame
 				b.setBackground(selectedContact);
 			}
 		});
-		b.setLocation(1, contactBtnsList.size() != 0?contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40:0);
-		b.setSize(contactBtns.getWidth()-1, 39);
+		b.setLocation(1, contactBtnsList.size() != 0 ? contactBtnsList.get(contactBtnsList.size() - 1).getLocation().y + 40 : 0);
+		b.setSize(contactBtns.getWidth() - 1, 39);
 		contactBtnsList.add(b);
 		chatsList.put(ip, new Chat(i.chatsPanel, ip, i));
-		contactBtns.setSize(contactBtns.getWidth(), Math.max(contactBtns.getHeight(),(contactBtnsList.size() * 40)));
+		contactBtns.setSize(contactBtns.getWidth(), Math.max(contactBtns.getHeight(), (contactBtnsList.size() * 40)));
 		scroll.updateComponent(contactBtns);
 		scroll.update();
 
@@ -841,7 +854,7 @@ public class Interface extends JFrame
 			my = isMy;
 			setBounds(x, y, w, h);
 			size = rounding;
-			rect=new boolean[]{my?false:true,false,false,my?true:false};
+			rect = new boolean[] { my ? false : true, false, false, my ? true : false };
 			f.add(this);
 		}
 
@@ -850,32 +863,32 @@ public class Interface extends JFrame
 		{
 			int offset = 3;
 			// Drawing shadow for message
-			g.setColor(new Color(168,168,168));
-			fillRoundedRect(g, 0, 1, getWidth() - offset, getHeight() - offset+1, size);
+			g.setColor(new Color(168, 168, 168));
+			fillRoundedRect(g, 0, 1, getWidth() - offset, getHeight() - offset + 1, size);
 
 			// Drawing rounded rectangle for message
-			Color c=my ? LineType.My.background : LineType.Others.background;
-			g.setColor(new Color(c.getRed()+8, c.getGreen()+8, c.getBlue()+8));
+			Color c = my ? LineType.My.background : LineType.Others.background;
+			g.setColor(new Color(c.getRed() + 8, c.getGreen() + 8, c.getBlue() + 8));
 			fillRoundedRect(g, 0, 0, getWidth() - offset, getHeight() - offset, size);
 			g.setColor(c);
-			fillRoundedRect(g, 1, 1, getWidth() - offset-1, getHeight() - offset-1, size);
+			fillRoundedRect(g, 1, 1, getWidth() - offset - 1, getHeight() - offset - 1, size);
 		}
-		void fillRoundedRect(Graphics g, int x1,int y1,int x2,int y2,int round)
+
+		void fillRoundedRect(Graphics g, int x1, int y1, int x2, int y2, int round)
 		{
-			fillMargin(g, x1 + size, y1 + size, size, size,rect[0]);
-			fillMargin(g, x1 + size, y2 - size, size, size,rect[1]);
-			fillMargin(g, x2 - size, y2 - size, size, size,rect[2]);
-			fillMargin(g, x2 - size, y1 + size, size, size,rect[3]);
+			fillMargin(g, x1 + size, y1 + size, size, size, rect[0]);
+			fillMargin(g, x1 + size, y2 - size, size, size, rect[1]);
+			fillMargin(g, x2 - size, y2 - size, size, size, rect[2]);
+			fillMargin(g, x2 - size, y1 + size, size, size, rect[3]);
 			g.fillRect(x1 + size, y1, x2 - size * 2 - x1, y2 - y1 + 1);
 			g.fillRect(x1, y1 + size, x2 - x1 + 1, y2 - size * 2 - y1);
 		}
 
-		void fillMargin(Graphics g, int x, int y, int w, int h,boolean quad)
+		void fillMargin(Graphics g, int x, int y, int w, int h, boolean quad)
 		{
-			if(!quad)
+			if (!quad)
 				g.fillOval(x - w, y - h, w * 2, h * 2);
-			else
-				g.fillRect(x - w, y - h, w * 2+1, h * 2);
+			else g.fillRect(x - w, y - h, w * 2 + 1, h * 2);
 		}
 	}
 }

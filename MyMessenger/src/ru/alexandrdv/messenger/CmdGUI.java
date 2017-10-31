@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
+import javax.swing.WindowConstants;
 
 public abstract class CmdGUI
 {
@@ -18,7 +19,6 @@ public abstract class CmdGUI
 	public CmdGUI()
 	{
 		f = new JFrame();
-		f.setDefaultCloseOperation(3);
 		f.setTitle(" - Console");
 		f.setSize(758, 507);
 		f.setResizable(false);
@@ -30,7 +30,6 @@ public abstract class CmdGUI
 		area.setForeground(Color.LIGHT_GRAY);
 		area.setBounds(0, 0, 500, 300);
 
-		f.setVisible(true);
 		area.setFocusable(true);
 		ScrollPane pane = new ScrollPane();
 		pane.setBackground(Color.BLACK);
@@ -39,6 +38,13 @@ public abstract class CmdGUI
 		f.add(pane);
 		addkl(area);
 		area.setSelectionColor(Color.white);
+		
+//		f.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+//		f.setVisible(false);
+		
+		f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		f.setVisible(true);
+		
 		updateArea();
 	}
 

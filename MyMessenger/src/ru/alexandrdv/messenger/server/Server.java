@@ -1,6 +1,8 @@
 package ru.alexandrdv.messenger.server;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -12,8 +14,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+
+import javax.swing.Timer;
 
 import ru.alexandrdv.messenger.CmdGUI;
 import ru.alexandrdv.messenger.Encryptor;
@@ -33,30 +38,47 @@ public class Server extends CmdGUI
 	{
 		super();
 		start();
+		f.setVisible(true);
+		f.setDefaultCloseOperation(3);
 		f.addWindowListener(new WindowAdapter()
 		{
-			
-			
+
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				end();
-				
+
 			}
-		
+
 		});
 		f.setTitle(getClass().getName() + " $" + Calendar.getInstance().getTimeInMillis() + " - Console");
 		try
 		{
 			server = new ServerSocket(25777, 1000);
-			while (true)
-				createChat(server.accept());
 		}
 		catch (IOException e1)
 		{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		new Timer(10, new ActionListener()
+		{
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				try
+				{
+					createChat(server.accept());
+				}
+				catch (IOException e1)
+				{
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+
+			}
+		}).start();
 	}
 
 	private boolean sendTo(ObjectOutputStream os, String reciever, String msg, EncryptionType crypt, String sender)
@@ -73,11 +95,11 @@ public class Server extends CmdGUI
 		}
 	}
 
-	private boolean sendQuery(ObjectOutputStream os, String query, String argument,EncryptionType crypt, String sender)
+	private boolean sendQuery(ObjectOutputStream os, String query, String argument, EncryptionType crypt, String sender)
 	{
 		try
 		{
-			os.writeObject(new QueryPacket(query, argument,crypt, sender));
+			os.writeObject(new QueryPacket(query, argument, crypt, sender));
 			return true;
 		}
 		catch (Exception e)
@@ -88,7 +110,7 @@ public class Server extends CmdGUI
 	}
 
 	int encryptionKey = 13;
-
+	ArrayList<String> onlineIps=new ArrayList<String>();
 	private void createChat(Socket socket)
 	{
 		new Thread(new Runnable()
@@ -98,7 +120,9 @@ public class Server extends CmdGUI
 				try
 				{
 					ObjectOutputStream writer = new ObjectOutputStream(socket.getOutputStream());
+					sendQuery(writer, "yourip", socket.getInetAddress().getHostName() + ":" + socket.getPort(), EncryptionType.None, "Server");
 					ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
+					reader.readObject();
 					add(new ClientData("Client" + clientByIpAndPort.size(), socket.getInetAddress().getHostAddress(), socket.getPort(), socket, writer, reader));
 					boolean verified = false;
 					Packet p;
@@ -132,25 +156,35 @@ public class Server extends CmdGUI
 									{
 										case "isonline":
 										{
-											sendQuery(writer, clientByIpAndPort.containsKey(queryPacket.args.get("argument")) + "",null, EncryptionType.None, "Server");
+											String ip=queryPacket.args.get("argument");
+											
+										sendQuery(writer, isOnline(ip) + "", null, EncryptionType.None, "Server");
 										}
 											break;
 										case "getips":
 										{
-											String str="";
-											for(int i=0;i<clientByIpAndPort.keySet().size();i++)
-												str+=" "+clientByIpAndPort.keySet().toArray()[i];
-											sendQuery(writer, "onlineips",str.substring(1), EncryptionType.None, "Server");
+											String str = "";
+											for (int i = 0; i < clientByIpAndPort.keySet().size(); i++)
+											{
+												str += " " + clientByIpAndPort.keySet().toArray()[i];
+												isOnline(""+clientByIpAndPort.keySet().toArray()[i]);
+											}
+											sendQuery(writer, "onlineips", str.substring(1), EncryptionType.None, "Server");
+										}
+											break;
+										case "imonline":
+										{
+											onlineIps.remove(onlineIps.indexOf(queryPacket.args.get("argument")));
 										}
 											break;
 										case "exit":
 										{
-											String ip=socket.getInetAddress().getHostAddress();
-											String port=socket.getPort()+"";
+											String ip = socket.getInetAddress().getHostAddress();
+											String port = socket.getPort() + "";
 											writer.close();
 											reader.close();
 											socket.close();
-											clientByIpAndPort.remove(ip+":"+port);
+											clientByIpAndPort.remove(ip + ":" + port);
 										}
 											break;
 									}
@@ -175,9 +209,9 @@ public class Server extends CmdGUI
 										{
 											accounts.put(login, password);
 
-											sendQuery(writer, "Account created",null, EncryptionType.None, "Server");
+											sendQuery(writer, "Account created", null, EncryptionType.None, "Server");
 										}
-										else sendQuery(writer, "Account already exists",null, EncryptionType.None, "Server");
+										else sendQuery(writer, "Account already exists", null, EncryptionType.None, "Server");
 									}
 									else
 									{
@@ -185,10 +219,10 @@ public class Server extends CmdGUI
 											if (accounts.get(login).equals(password))
 											{
 												verified = true;
-												sendQuery(writer, "Account verified",null, EncryptionType.None, "Server");
+												sendQuery(writer, "Account verified", null, EncryptionType.None, "Server");
 											}
-											else sendQuery(writer, "Wrong Password",null, EncryptionType.None, "Server");
-										else sendQuery(writer, "Account not exists",null, EncryptionType.None, "Server");
+											else sendQuery(writer, "Wrong Password", null, EncryptionType.None, "Server");
+										else sendQuery(writer, "Account not exists", null, EncryptionType.None, "Server");
 
 									}
 
@@ -196,7 +230,6 @@ public class Server extends CmdGUI
 							}
 						}
 					}
-					socket.close();
 				}
 				catch (Exception e)
 				{
@@ -205,6 +238,29 @@ public class Server extends CmdGUI
 			}
 		}).start();
 
+	}
+	public boolean isOnline(String ip)
+	{
+		boolean	isonline=clientByIpAndPort.containsKey(ip);
+		onlineIps.add(ip);
+		
+		Timer t=new Timer(60*1000, new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(isonline&&onlineIps.contains(ip))
+				{
+					clientByIpAndPort.remove(ip);
+					onlineIps.remove(ip);
+				}
+				
+			}
+		});
+		t.setRepeats(false);
+		t.start();
+		return isonline;
 	}
 
 	public void saveAccounts()
@@ -226,10 +282,12 @@ public class Server extends CmdGUI
 			e.printStackTrace();
 		}
 	}
+
 	public void start()
 	{
 		loadAccounts();
 	}
+
 	public void end()
 	{
 		saveAccounts();
@@ -246,7 +304,7 @@ public class Server extends CmdGUI
 			{
 				FileInputStream fis = new FileInputStream(f);
 				ObjectInputStream ois = new ObjectInputStream(fis);
-				accounts=(HashMap<String, String>) ois.readObject();
+				accounts = (HashMap<String, String>) ois.readObject();
 				ois.close();
 				fis.close();
 			}

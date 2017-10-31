@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Calendar;
@@ -29,10 +30,11 @@ public class Client extends CmdGUI
 	public Socket socket;
 	public int encryptionKey = 14;
 	Interface i;
+	String ipport="";
 
 	public String getAddress()
 	{
-		return socket.getLocalAddress().getHostAddress() + ":" + socket.getLocalPort();
+		return ipport;
 	}
 
 	boolean signedIn = false;
@@ -67,7 +69,7 @@ public class Client extends CmdGUI
 			{
 				try
 				{
-					socket = new Socket("192.168.0.2", 25777);
+					socket = new Socket("94.181.44.135", 25777);
 					writer = new ObjectOutputStream(socket.getOutputStream());
 					ObjectInputStream reader = new ObjectInputStream(socket.getInputStream());
 					println("You're working on " + getAddress());
@@ -99,6 +101,12 @@ public class Client extends CmdGUI
 										reciever = lastToReciever;
 										lastToReciever = "";
 										// i.addContactBtn(reciever);
+									}
+										break;
+									case "yourip":
+									{
+										ipport=queryPacket.args.get("argument");
+										sendQuery(writer, "ihaveip", "", Encryptor.EncryptionType.None, ipport);
 									}
 										break;
 									case "false":
