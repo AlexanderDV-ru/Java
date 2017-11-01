@@ -1,26 +1,27 @@
-package ru.alexandrdv.udpnetwork;
+package ru.alexandrdv.udp;
 
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Random;
 
-import ru.alexandrdv.udpnetwork.UDPClient.Packet;
-import ru.alexandrdv.udpnetwork.Encryptor.EncryptionType;
+import ru.alexandrdv.udp.Packet;
 
 public class Encryptor
 {
-	static String[][] latin = new String[][] { "abcdefghijklmnopqrstuvwxyz".split(""), "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("") };
-	static String[] digits = "0123456789".split("");
-	static Random rand = new Random();
+	private static final String[][] latin = new String[][] { "abcdefghijklmnopqrstuvwxyz".split(""), "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("") };
+	private static final String[] digits = "0123456789".split("");
+	private static final Random random = new Random();
 
 	public static String encrypt(String msg, int key, EncryptionType from, EncryptionType to)
 	{
+		if(msg==null)
+			return msg;
 		String result = "";
 		if (from == EncryptionType.None)
 		{
 			result = "1";
 			for (char c : msg.toCharArray())
-				result += BigInteger.valueOf(c).multiply(BigInteger.valueOf(key)) + latin[rand.nextInt(2)][rand.nextInt(26)] + digits[rand.nextInt(10)];
+				result += BigInteger.valueOf(c).multiply(BigInteger.valueOf(key)) + latin[random.nextInt(2)][random.nextInt(26)] + digits[random.nextInt(10)];
 			return result;
 		}
 		if (from == EncryptionType.Double)
@@ -31,8 +32,8 @@ public class Encryptor
 				msg = msg.replace(latin[0][i], "&");
 			for (String s : msg.split("&"))
 				if (s.length() > 1)
-					result += new BigInteger(s.substring(1, s.length())).divide(BigInteger.valueOf(key)) + latin[rand.nextInt(2)][rand.nextInt(26)]
-							+ digits[rand.nextInt(10)];
+					result += new BigInteger(s.substring(1, s.length())).divide(BigInteger.valueOf(key)) + latin[random.nextInt(2)][random.nextInt(26)]
+							+ digits[random.nextInt(10)];
 			return result;
 		}
 		if (to == EncryptionType.None)
@@ -53,8 +54,8 @@ public class Encryptor
 				msg = msg.replace(latin[0][i], "&");
 			for (String s : msg.split("&"))
 				if (s.length() > 1)
-					result += new BigInteger(s.substring(1, s.length())).multiply(BigInteger.valueOf(key)) + latin[rand.nextInt(2)][rand.nextInt(26)]
-							+ digits[rand.nextInt(10)];
+					result += new BigInteger(s.substring(1, s.length())).multiply(BigInteger.valueOf(key)) + latin[random.nextInt(2)][random.nextInt(26)]
+							+ digits[random.nextInt(10)];
 			return result;
 		}
 		return msg;

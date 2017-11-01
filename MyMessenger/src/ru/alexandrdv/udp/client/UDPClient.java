@@ -1,4 +1,4 @@
-package ru.alexandrdv.udpnetwork;
+package ru.alexandrdv.udp.client;
 
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
@@ -9,17 +9,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Random;
 
-import ru.alexandrdv.udpnetwork.Encryptor.EncryptionType;
+import ru.alexandrdv.udp.Packet;
 
 /**
  * 
@@ -28,41 +25,8 @@ import ru.alexandrdv.udpnetwork.Encryptor.EncryptionType;
  */
 public class UDPClient
 {
-	/**
-	 * 
-	 * @author AlexandrDV
-	 *
-	 */
-	static class Packet implements Serializable
-	{
-		private static final long serialVersionUID = -8942733866610289453L;
-		public HashMap<String,String> args=new HashMap<String,String>();
-		public InetAddress ip;
-		public EncryptionType crypt;
-		public int port;
-		/**
-		 * 
-		 * @param msg
-		 * @param ip
-		 * @param port
-		 */
-		public Packet(String type,String reciever,String msg, String id, InetAddress ip, int port,EncryptionType crypt)
-		{
-			super();
-			this.args.put("type",type);
-			this.args.put("reciever",reciever);
-			this.args.put("msg",msg);
-			this.args.put("id",id);
-			this.ip = ip;
-			this.port = port;
-			this.crypt = crypt;
-		}
-
-		
-
-	}
-
-	InetAddress clientAddress = null,serverAddress;
+	private static final Random random = new Random();
+	InetAddress clientAddress = null, serverAddress;
 	int serverPort, port;
 	ActionListener listener;
 

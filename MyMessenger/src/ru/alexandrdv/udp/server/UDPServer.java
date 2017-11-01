@@ -1,6 +1,5 @@
-package ru.alexandrdv.udpnetwork;
+package ru.alexandrdv.udp.server;
 
-import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
@@ -12,14 +11,18 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Random;
 
-import ru.alexandrdv.udpnetwork.UDPClient.Packet;
+import ru.alexandrdv.udp.Packet;
 
 public class UDPServer
 {
+	private static final Random random = new Random();
 	int port;
+	InetAddress addr;
 	ActionListener listener;
 
 	/**
@@ -30,6 +33,15 @@ public class UDPServer
 	 */
 	public UDPServer(int port, ActionListener listener)
 	{
+		try
+		{
+			addr=InetAddress.getLocalHost();
+		}
+		catch (UnknownHostException e1)
+		{
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		this.port = port;
 		this.listener = listener;
 		try
@@ -121,7 +133,7 @@ public class UDPServer
 		try
 		{
 			Packet packet = readByteArray(data);
-			packet.ip = pac.getAddress();
+			packet.address=new InetSocketAddress(pac.getAddress(), packet.address.getPort());
 			return packet;
 		}
 		catch (Exception e)
@@ -144,7 +156,9 @@ public class UDPServer
 		try
 		{
 			byte[] data = writeToByteArray(pack);
+			
 			s.send(new DatagramPacket(data, data.length, clientAddress, clientPort));// отправление пакета
+			
 
 		}
 		catch (UnknownHostException e)

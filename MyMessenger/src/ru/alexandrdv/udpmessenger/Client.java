@@ -1,83 +1,68 @@
-package ru.alexandrdv.udpnetwork;
+package ru.alexandrdv.udpmessenger;
 
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.Timer;
-import javax.swing.UIManager;
-
-import ru.alexandrdv.messenger.Packet.SignPacket;
-import ru.alexandrdv.udpnetwork.Encryptor;
-import ru.alexandrdv.udpnetwork.Encryptor.EncryptionType;
-import ru.alexandrdv.udpnetwork.UDPClient.Packet;
-
-import javax.swing.JButton;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.util.Random;
 import java.util.UUID;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JDesktopPane;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JDialog;
-import javax.swing.JRadioButton;
-import javax.swing.JMenuBar;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+
+import ru.alexandrdv.udp.Packet;
+import ru.alexandrdv.udp.client.MessageClient;
 
 public class Client
 {
-	private MessageClient client;
-	private JPanel rightPanel;
-	private ButtonX contactsTab;
-	private ButtonX moreTab;
-	private JPanel morePanel;
-	private JPanel contactsPanel;
-	private JPanel leftPanel;
-	private JPanel bottomPanel;
-	private JPanel middlePanel;
-	private JButton btnNewButton;
-	private JRadioButton rdbtnNewRadioButton;
-	private JMenuBar menuBar;
-	private JMenu mnWindow;
-	private JMenu mnAccounts;
-	private JMenu mnOther;
-	private JMenu mnHelp;
-	private JMenu mnForDevelopers;
-	private JFrame f;
+	private static final Random random = new Random();
+	private static MessageClient client;
+	private static JPanel rightPanel;
+	private static ButtonX contactsTab;
+	private static ButtonX moreTab;
+	private static JPanel morePanel;
+	private static JPanel contactsPanel;
+	private static JPanel leftPanel;
+	private static JPanel bottomPanel;
+	private static JPanel middlePanel;
+	private static JButton btnNewButton;
+	private static JRadioButton rdbtnNewRadioButton;
+	private static JMenuBar menuBar;
+	private static JMenu mnWindow;
+	private static JMenu mnAccounts;
+	private static JMenu mnOther;
+	private static JMenu mnHelp;
+	private static JMenu mnForDevelopers;
+	private static JFrame f;
+	private static boolean signedIn = false;
+	private static String password;
+	private static String login;
+	private static String lastLogin;
+	private static String lastPassword;
+	private static JDialog d;
+	private static boolean hasDeveloperPermissions = false;
+	private static JTextField textField;
+	private static JTextArea textArea;
 
-	public void resize()
+	public static void main(String[] args)
 	{
-		System.out.println("Resizing...");
-		menuBar.setSize(f.getContentPane().getSize().width, menuBar.getHeight());
-		middlePanel.setSize(f.getContentPane().getSize().width, f.getContentPane().getSize().height - (menuBar.getHeight() + 1) - bottomPanel.getHeight());
-		leftPanel.setSize(leftPanel.getWidth(), middlePanel.getHeight() - 2);
-		rightPanel.setSize(middlePanel.getWidth() - leftPanel.getWidth() - 2, middlePanel.getHeight() - 2);
-		bottomPanel.setLocation(bottomPanel.getX(), f.getContentPane().getSize().height - bottomPanel.getHeight());
-
-		mnForDevelopers.setEnabled(hasDeveloperPermissions);
-		mnForDevelopers.setVisible(hasDeveloperPermissions);
-	}
-
-	public Client()
-	{
-
 		f = new JFrame();
 		f.setSize(500, 500);
 		f.setLocationRelativeTo(null);
@@ -122,7 +107,9 @@ public class Client
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				openSignInWindow(false);
+				if (mntmSignIn.getText().equals("Sign In"))
+					openSignInWindow(false);
+				else openProfileWindow();
 
 			}
 		});
@@ -172,6 +159,23 @@ public class Client
 		bottomPanel.setBounds(0, 434, 484, 31);
 		f.getContentPane().add(bottomPanel);
 		bottomPanel.setLayout(null);
+
+		textField = new JTextField();
+		textField.setBounds(78, 11, 86, 20);
+		bottomPanel.add(textField);
+		textField.setColumns(10);
+
+		JButton btnSend = new JButton("Send");
+		btnSend.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				client.send("msg", textField.getText(), login, login, UUID.randomUUID().toString());
+				textField.setText("");
+			}
+		});
+		btnSend.setBounds(244, 10, 89, 23);
+		bottomPanel.add(btnSend);
 
 		middlePanel = new JPanel();
 		middlePanel.setBorder(UIManager.getBorder("Tree.editorBorder"));
@@ -233,9 +237,13 @@ public class Client
 		contactsPanel.add(btnNewButton);
 
 		rightPanel = new JPanel();
-		rightPanel.setBounds(143, 1, 341, 410);
+		rightPanel.setBounds(145, 1, 341, 410);
 		middlePanel.add(rightPanel);
 		rightPanel.setLayout(null);
+
+		textArea = new JTextArea();
+		textArea.setBounds(0, 0, 341, 410);
+		rightPanel.add(textArea);
 		f.setVisible(true);
 		client = new MessageClient(new ActionListener()
 		{
@@ -244,28 +252,14 @@ public class Client
 			public void actionPerformed(ActionEvent e)
 			{
 				Packet p = ((Packet) e.getSource());
+				System.out.println(p.args.get("type"));
 				switch (p.args.get("type"))
 				{
 					case "msg":
-						addMsg("", "'" + p.ip.getHostAddress() + ":" + p.port + "'" + ": " + p.args.get("msg"));
+						addMsg(p.args.get("sender"), p.args.get("msg"));
 						break;
 					case "info":
-						addMsg("", "You: " + client.msgs.remove(p.args.get("id")));
-						break;
-					case "joinPack":
-
-						Timer t = new Timer(0, new ActionListener()
-						{
-
-							@Override
-							public void actionPerformed(ActionEvent e)
-							{
-								System.out.println(client.udp.clientAddress.getHostAddress() + ":" + client.udp.port);
-							}
-						});
-						t.start();
-						t.setRepeats(false);
-
+						addMsg(login, client.msgs.remove(p.args.get("id")));
 						break;
 					case "dev":
 						hasDeveloperPermissions = true;
@@ -275,6 +269,7 @@ public class Client
 							JOptionPane.showMessageDialog(null, "Account already exists!");
 						if (p.args.get("msg").equals("successfullySignedUp"))
 							JOptionPane.showMessageDialog(null, "Successfully signed up!");
+
 						break;
 					case "signin":
 						if (p.args.get("msg").equals("accountNotExists"))
@@ -283,18 +278,37 @@ public class Client
 							JOptionPane.showMessageDialog(null, "Wrong password!");
 						if (p.args.get("msg").equals("successfullySignedIn"))
 							JOptionPane.showMessageDialog(null, "Successfully signed in!");
+						if (p.args.get("msg").equals("youAlreadySignedIn"))
+							JOptionPane.showMessageDialog(null, "You are already signed in!");
+						if (p.args.get("msg").equals("successfullySignedIn") || p.args.get("msg").equals("youAlreadySignedIn"))
+						{
+							login = lastLogin;
+							password = lastPassword;
+							signedIn = true;
+							mntmSignIn.setText("Profile");
+						}
+						lastPassword = "";
+						lastLogin = "";
 						break;
 				}
 
 			}
 		});
 	}
+	
+	public static void resize()
+	{
+		menuBar.setSize(f.getContentPane().getSize().width, menuBar.getHeight());
+		middlePanel.setSize(f.getContentPane().getSize().width, f.getContentPane().getSize().height - (menuBar.getHeight() + 1) - bottomPanel.getHeight());
+		leftPanel.setSize(leftPanel.getWidth(), middlePanel.getHeight() - 2);
+		rightPanel.setSize(middlePanel.getWidth() - leftPanel.getWidth() - 2, middlePanel.getHeight() - 2);
+		bottomPanel.setLocation(bottomPanel.getX(), f.getContentPane().getSize().height - bottomPanel.getHeight());
 
-	boolean signedIn = false;
-	private String password;
-	private String login;
+		mnForDevelopers.setEnabled(hasDeveloperPermissions);
+		mnForDevelopers.setVisible(hasDeveloperPermissions);
+	}
 
-	public void openProfileWindow()
+	public static void openProfileWindow()
 	{
 		Color color = new Color(220, 220, 230);
 		JOptionPane pane = new JOptionPane(null, -1, 0, null, new Object[0], null);
@@ -312,7 +326,7 @@ public class Client
 		loginLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		login.add(loginLabel);
 
-		JTextField loginField = new JTextField(this.login);
+		JTextField loginField = new JTextField(Client.login);
 		loginField.setEditable(false);
 		login.add(loginField);
 
@@ -329,19 +343,19 @@ public class Client
 		password.add(passwordLabel);
 
 		String pass = "";
-		for (int i = 0; i < this.password.length(); i++)
+		for (int i = 0; i < Client.password.length(); i++)
 			pass += "*";
 		JPasswordField passwordField = new JPasswordField(pass);
 		passwordField.setEditable(false);
 		password.add(passwordField);
 
-		d = pane.createDialog("Account's Info");
+		d = pane.createDialog("Your profile");
 		d.setLocationRelativeTo(null);
 		d.setSize(240, 200);
 		d.setVisible(true);
 	}
 
-	public void openPacketSendWindow()
+	public static void openPacketSendWindow()
 	{
 		Color color = new Color(220, 220, 230);
 		JOptionPane pane = new JOptionPane(null, -1, 0, null, new Object[0], null);
@@ -402,21 +416,9 @@ public class Client
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				try
-				{
-
-					client.send(type.getText(), msg.getText(), reciever.getText(), UUID.randomUUID().toString());
-
-					System.out.println("dasd");
-					d.setVisible(false);
-					d = null;
-
-				}
-				catch (Exception exc)
-				{
-					exc.printStackTrace();
-				}
-
+				client.send(type.getText(), msg.getText(), Client.login, reciever.getText(), UUID.randomUUID().toString());
+				d.setVisible(false);
+				d = null;
 			}
 		});
 		d = pane.createDialog("Accounts");
@@ -425,7 +427,7 @@ public class Client
 		d.setVisible(true);
 	}
 
-	public void openSignInWindow(boolean signUp)
+	public static void openSignInWindow(boolean signUp)
 	{
 		Color color = new Color(220, 220, 230);
 		JOptionPane pane = new JOptionPane(null, -1, 0, null, new Object[0], null);
@@ -490,24 +492,15 @@ public class Client
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				try
+				if (new String(passwordField.getPassword()).equals(new String(passwordRepeatField.getPassword())) || !signUp)
 				{
-					if (new String(passwordField.getPassword()).equals(new String(passwordRepeatField.getPassword())) || !signUp)
-					{
-						lastLogin = loginField.getText();
-						lastPassword = new String(passwordField.getPassword());
-						client.send("sign" + (signUp ? "up" : "in"), loginField.getText() + "\n" + new String(passwordField.getPassword()), "server", "");
-						d.setVisible(false);
-						d = null;
-					}
-					else JOptionPane.showMessageDialog(null, "Password repeat is wrong!");
-
+					lastLogin = loginField.getText();
+					lastPassword = new String(passwordField.getPassword());
+					client.send("sign" + (signUp ? "up" : "in"), lastLogin + "\n" + lastPassword, Client.login, "server", "");
+					d.setVisible(false);
+					d = null;
 				}
-				catch (Exception exc)
-				{
-					exc.printStackTrace();
-				}
-
+				else JOptionPane.showMessageDialog(null, "Password repeat is wrong!");
 			}
 		});
 
@@ -520,20 +513,9 @@ public class Client
 		d.setVisible(true);
 	}
 
-	private String lastLogin;
-	private String lastPassword;
-
-	JDialog d;
-	boolean hasDeveloperPermissions = false;
-
-	public void addMsg(String user, String msg)
+	public static void addMsg(String user, String msg)
 	{
-		System.out.println(user + ":" + msg);
-	}
-
-	public static void main(String[] args)
-	{
-		new Client();
+		textArea.setText((textArea.getText().equals("") ? "" : textArea.getText() + "\n") + user + (user.equals(login) ? " (You)" : "") + ":" + msg);
 	}
 
 	/**
@@ -548,7 +530,6 @@ public class Client
 		public ButtonX(String text, boolean hasFrame, boolean[] rect)
 		{
 			super(text, hasFrame, rect);
-			// TODO Auto-generated constructor stub
 		}
 
 	}

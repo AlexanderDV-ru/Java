@@ -1,35 +1,38 @@
-package ru.alexandrdv.udpnetwork;
+package ru.alexandrdv.udp.client;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.UUID;
 
 import javax.swing.JOptionPane;
 
-import ru.alexandrdv.udpnetwork.Encryptor.EncryptionType;
-import ru.alexandrdv.udpnetwork.UDPClient.Packet;
+import ru.alexandrdv.udp.Encryptor;
+import ru.alexandrdv.udp.Encryptor.EncryptionType;
+import ru.alexandrdv.udp.Packet;
 
 public class MessageClient
 {
+	private static final Random random = new Random();
 	UDPClient udp;
 	int clientkey;
-	HashMap<String, String> msgs = new HashMap<String, String>();
+	public HashMap<String, String> msgs = new HashMap<String, String>();
 
 	public MessageClient(ActionListener listener)
 	{
-		clientkey = 1 + new Random().nextInt(999);
-		udp = new UDPClient("94.181.44.135", 1, new Random().nextInt(50000) + 10000, new ActionListener()
+		clientkey = 1 + random.nextInt(999);
+		udp = new UDPClient("94.181.44.135", 1, random.nextInt(50000) + 10000, new ActionListener()
 		{
 
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				Packet p = ((Packet) e.getSource());
+				p.address=new InetSocketAddress(udp.clientAddress, udp.port);
 				if (p.crypt == EncryptionType.Double)
 					udp.send(Encryptor.encryptPacket(p, clientkey, p.crypt, EncryptionType.Server));
 				else if (p.crypt == EncryptionType.Server)
@@ -50,8 +53,6 @@ public class MessageClient
 							e1.printStackTrace();
 						}
 					}
-					if (msgs.keySet().size() == 0)
-						clientkey = 1 + new Random().nextInt(999);
 					listener.actionPerformed(new ActionEvent(p, 1, "recieved"));
 				}
 			}
@@ -59,8 +60,8 @@ public class MessageClient
 
 		try
 		{
-			udp.send(Encryptor.encryptPacket(new Packet("joinPack", "server", "none", "none", InetAddress.getLocalHost(), udp.port, null), clientkey,
-					EncryptionType.None, EncryptionType.Client));
+			udp.send(Encryptor.encryptPacket(new Packet("joinPack", "server",null, null, null, new InetSocketAddress(InetAddress.getLocalHost(), udp.port),
+					null), clientkey, EncryptionType.None, EncryptionType.Client));
 		}
 		catch (UnknownHostException e1)
 		{
@@ -89,10 +90,12 @@ public class MessageClient
 
 	}
 
-	public void send(String type, String message, String reciever, String id)
+	ArrayList<Integer> waiters = new ArrayList<Integer>();
+
+	public void send(String type, String message, String sender, String reciever, String id)
 	{
-		udp.send(Encryptor.encryptPacket(new Packet(type, reciever, message, id, udp.clientAddress, udp.port, null), clientkey, EncryptionType.None,
-				EncryptionType.Client));
+		udp.send(Encryptor.encryptPacket(new Packet(type, reciever,sender, message, id, new InetSocketAddress(udp.clientAddress, udp.port), null), clientkey,
+				EncryptionType.None, EncryptionType.Client));
 		if (type.equals("msg"))
 			msgs.put(id, message);
 	}
