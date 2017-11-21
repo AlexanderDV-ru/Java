@@ -16,7 +16,14 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Random;
 
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+
 import ru.alexandrdv.udp.Packet;
+import ru.alexandrdv.udp.client.UDPClient.Sound;
+import ru.alexandrdv.udpmessenger.ImagePack;
+import ru.alexandrdv.udp.Sounds;
 
 public class UDPServer
 {
@@ -35,7 +42,7 @@ public class UDPServer
 	{
 		try
 		{
-			addr=InetAddress.getLocalHost();
+			addr = InetAddress.getLocalHost();
 		}
 		catch (UnknownHostException e1)
 		{
@@ -54,17 +61,13 @@ public class UDPServer
 			System.exit(-1);
 		}
 
-		new Thread(new Runnable()
+		new Thread(() ->
 		{
-			public void run()
-			{
-				startGetter();
-			}
+			startGetter();
 		}).start();
 	}
 
 	DatagramSocket s;
-	int packetSize = 8 * 8 * 8 * 8 * 4;
 
 	public void startGetter()
 	{
@@ -85,15 +88,15 @@ public class UDPServer
 
 	/**
 	 * 
-	 * @param packet
+	 * @param object
 	 * @return
 	 * @throws IOException
 	 */
-	private static byte[] writeToByteArray(Packet packet) throws IOException
+	private static byte[] writeToByteArray(Object object) throws IOException
 	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream out = new ObjectOutputStream(baos);
-		out.writeObject(packet);
+		out.writeObject(object);
 		byte[] bytes = baos.toByteArray();
 		out.close();
 		baos.close();
@@ -107,14 +110,14 @@ public class UDPServer
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	private static Packet readByteArray(byte[] bytes) throws IOException, ClassNotFoundException
+	private static Object readByteArray(byte[] bytes) throws IOException, ClassNotFoundException
 	{
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		ObjectInputStream in = new ObjectInputStream(bais);
-		Packet packet = (Packet) in.readObject();
+		Object pack = (Object) in.readObject();
 		in.close();
 		bais.close();
-		return packet;
+		return pack;
 	}
 
 	/**
@@ -125,22 +128,35 @@ public class UDPServer
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public Packet recieve() throws IOException, ClassNotFoundException
+	public Object recieve() throws IOException, ClassNotFoundException
 	{
-		byte[] data = new byte[packetSize];
+		Object pack;
+
+		byte[] data = new byte[Packet.packetSize];
 		DatagramPacket pac = new DatagramPacket(data, data.length);
 		s.receive(pac);
-		try
+		pack = readByteArray(data);
+		if (pack instanceof Packet)
 		{
-			Packet packet = readByteArray(data);
-			packet.address=new InetSocketAddress(pac.getAddress(), packet.address.getPort());
-			return packet;
+			Packet packet = (Packet) pack;
+			packet.address = new InetSocketAddress(pac.getAddress(), packet.address.getPort());
 		}
-		catch (Exception e)
+		if (pack instanceof Sound)
 		{
-			e.printStackTrace();
-			return recieve();
+			s.send(new DatagramPacket(data, data.length, pac.getAddress(), ((Sound) pack).port));// отправление пакета
+			try
+			{
+				// Clip clip=AudioSystem.getClip();
+				// clip.open(Sounds.FORMAT, ((Sound)pack).data, 0, ((Sound)pack).data.length);
+				// clip.start();
+			}
+			catch (Exception e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		return pack;
 
 	}
 
@@ -151,14 +167,13 @@ public class UDPServer
 	 * @param pack
 	 * @return
 	 */
-	public int send(InetAddress clientAddress, int clientPort, Packet pack)
+	public int send(InetAddress clientAddress, int clientPort, Object pack)
 	{
 		try
 		{
 			byte[] data = writeToByteArray(pack);
-			
+
 			s.send(new DatagramPacket(data, data.length, clientAddress, clientPort));// отправление пакета
-			
 
 		}
 		catch (UnknownHostException e)

@@ -2,6 +2,7 @@ package ru.alexandrdv.udp.client;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -9,30 +10,40 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import javax.imageio.ImageIO;
+import javax.print.attribute.standard.JobPrioritySupported;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.FloatControl.Type;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
 
 import ru.alexandrdv.udp.Encryptor;
+
 import ru.alexandrdv.udp.Encryptor.EncryptionType;
+import ru.alexandrdv.udp.client.UDPClient.Sound;
+import ru.alexandrdv.udpmessenger.Client;
+import ru.alexandrdv.udpmessenger.ImagePack;
 import ru.alexandrdv.udp.Packet;
+import ru.alexandrdv.udp.Sounds;
 
 public class MessageClient
 {
 	private static final Random random = new Random();
-	UDPClient udp;
-	int clientkey;
-	public HashMap<String, String> msgs = new HashMap<String, String>();
+	public UDPClient udp;
+	public int clientkey;
 
 	public MessageClient(ActionListener listener)
 	{
 		clientkey = 1 + random.nextInt(999);
-		udp = new UDPClient("94.181.44.135", 1, random.nextInt(50000) + 10000, new ActionListener()
+		udp = new UDPClient("94.181.44.135", 1, random.nextInt(50000) + 10000, (ev) ->
 		{
-
-			@Override
-			public void actionPerformed(ActionEvent e)
+			Object source = ev.getSource();
+			if (source instanceof Packet)
 			{
-				Packet p = ((Packet) e.getSource());
-				p.address=new InetSocketAddress(udp.clientAddress, udp.port);
+				Packet p = ((Packet) source);
+				p.address = new InetSocketAddress(udp.clientAddress, udp.port);
 				if (p.crypt == EncryptionType.Double)
 					udp.send(Encryptor.encryptPacket(p, clientkey, p.crypt, EncryptionType.Server));
 				else if (p.crypt == EncryptionType.Server)
@@ -53,15 +64,34 @@ public class MessageClient
 							e1.printStackTrace();
 						}
 					}
-					listener.actionPerformed(new ActionEvent(p, 1, "recieved"));
+					listener.actionPerformed(new ActionEvent(source, 1, "recieved"));
 				}
 			}
+			else if (source instanceof Sound)
+			{
+				Sound sound = (Sound) source;
+				try
+				{
+					byte[] mdata = sound.data;
+					sounds.playClip(mdata);
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+			else if(source instanceof ImagePack)
+			{
+				listener.actionPerformed(new ActionEvent(source, 2, "Image"));
+			}
+			
+
 		});
 
 		try
 		{
-			udp.send(Encryptor.encryptPacket(new Packet("joinPack", "server",null, null, null, new InetSocketAddress(InetAddress.getLocalHost(), udp.port),
-					null), clientkey, EncryptionType.None, EncryptionType.Client));
+			udp.send(Encryptor.encryptPacket(new Packet("joinPack", "server", null, null, new InetSocketAddress(InetAddress.getLocalHost(), udp.port), null),
+					clientkey, EncryptionType.None, EncryptionType.Client));
 		}
 		catch (UnknownHostException e1)
 		{
@@ -82,7 +112,6 @@ public class MessageClient
 			}
 			catch (InterruptedException e1)
 			{
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		System.out.println(i);
@@ -90,14 +119,21 @@ public class MessageClient
 
 	}
 
+	public int[] lastImgBytes;
+	public int lastImgIndex;
+
+	public float soundVolumeLeft = 1.0f, soundVolumeRight = 0.8f;
+
+	byte[][] soundes = new byte[4][Sounds.CHUNK_SIZE / 4];
 	ArrayList<Integer> waiters = new ArrayList<Integer>();
 
-	public void send(String type, String message, String sender, String reciever, String id)
+	public void send(String type, String message, String sender, String reciever)
 	{
-		udp.send(Encryptor.encryptPacket(new Packet(type, reciever,sender, message, id, new InetSocketAddress(udp.clientAddress, udp.port), null), clientkey,
+		udp.send(Encryptor.encryptPacket(new Packet(type, reciever, sender, message, new InetSocketAddress(udp.clientAddress, udp.port), null), clientkey,
 				EncryptionType.None, EncryptionType.Client));
-		if (type.equals("msg"))
-			msgs.put(id, message);
 	}
+
+	public Sounds sounds = Client.sounds;
+	public int otherSoundClient;
 
 }

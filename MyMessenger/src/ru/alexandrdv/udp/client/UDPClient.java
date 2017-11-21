@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -16,7 +17,16 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Random;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.TargetDataLine;
+import javax.swing.JOptionPane;
+
 import ru.alexandrdv.udp.Packet;
+import ru.alexandrdv.udp.Sounds;
 
 /**
  * 
@@ -26,8 +36,10 @@ import ru.alexandrdv.udp.Packet;
 public class UDPClient
 {
 	private static final Random random = new Random();
-	InetAddress clientAddress = null, serverAddress;
-	int serverPort, port;
+	public InetAddress clientAddress = null;
+	InetAddress serverAddress;
+	int serverPort;
+	public int port;
 	ActionListener listener;
 
 	/**
@@ -62,47 +74,38 @@ public class UDPClient
 			e.printStackTrace();
 			System.exit(-1);
 		}
-
-		new Thread(new Runnable()
-		{
-			public void run()
+		new Thread(()->
 			{
-				startGetter();
+				try
+				{
+					while (true)
+						listener.actionPerformed(new ActionEvent(recieve(), 0, "recieved"));
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+				catch (ClassNotFoundException e)
+				{
+					e.printStackTrace();
+				}
 			}
-		}).start();
+		).start();
 	}
 
 	DatagramSocket s;
-	int packetSize = 8 * 8 * 8 * 8 * 4;
-
-	public void startGetter()
-	{
-		try
-		{
-			while (true)
-				listener.actionPerformed(new ActionEvent(recieve(), 0, "recieved"));
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		catch (ClassNotFoundException e)
-		{
-			e.printStackTrace();
-		}
-	}
 
 	/**
 	 * 
-	 * @param packet
+	 * @param object
 	 * @return
 	 * @throws IOException
 	 */
-	private static byte[] writeToByteArray(Packet packet) throws IOException
+	private static byte[] writeToByteArray(Object object) throws IOException
 	{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream out = new ObjectOutputStream(baos);
-		out.writeObject(packet);
+		out.writeObject(object);
 		byte[] bytes = baos.toByteArray();
 		out.close();
 		baos.close();
@@ -116,11 +119,11 @@ public class UDPClient
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	private static Packet readByteArray(byte[] bytes) throws IOException, ClassNotFoundException
+	private static Object readByteArray(byte[] bytes) throws IOException, ClassNotFoundException
 	{
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		ObjectInputStream in = new ObjectInputStream(bais);
-		Packet packet = (Packet) in.readObject();
+		Object packet = in.readObject();
 		in.close();
 		bais.close();
 		return packet;
@@ -134,13 +137,12 @@ public class UDPClient
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public Packet recieve() throws IOException, ClassNotFoundException
+	public Object recieve() throws IOException, ClassNotFoundException
 	{
-		byte[] data = new byte[packetSize];
+		byte[] data = new byte[Packet.packetSize];
 		DatagramPacket pac = new DatagramPacket(data, data.length);
 		s.receive(pac);
-		Packet packet = readByteArray(data);
-		return packet;
+		return readByteArray(data);
 
 	}
 
@@ -151,7 +153,7 @@ public class UDPClient
 	 * @param pack
 	 * @return
 	 */
-	public int send(Packet pack)
+	public int send(Object pack)
 	{
 		try
 		{
@@ -185,4 +187,20 @@ public class UDPClient
 		}
 		return 1;
 	}
+
+	public static class Sound implements Serializable
+	{
+		private static final long serialVersionUID = -8942733866610289458L;
+		public byte[] data;
+		public int port,id;
+
+		public Sound(byte[] data, int port,int id)
+		{
+			super();
+			this.data = data;
+			this.port = port;
+			this.id=id;
+		}
+	}
+
 }
